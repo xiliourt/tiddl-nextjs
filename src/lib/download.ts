@@ -374,9 +374,10 @@ export const downloadTrack = async (
             setProgress(p => ({ ...p, [trackId]: { ...p[trackId], progress: percentCompleted } }));
         }
 
-        const blob = new Blob(streamData, { type: 'application/octet-stream' });
+        const blob = new Blob(streamData);
+        const stream = await blob.arrayBuffer();
 
-        setProgress(p => ({ ...p, [trackId]: { ...p[trackId], progress: 100, message: 'Download complete', stream: blob.arrayBuffer() } }));
+        setProgress(p => ({ ...p, [trackId]: { ...p[trackId], progress: 100, message: 'Download complete', stream } }));
 
     } catch (error) {
         console.error('Failed to download track', error);
