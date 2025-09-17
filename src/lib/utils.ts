@@ -1,8 +1,7 @@
 'use client';
 
 import { XMLParser } from 'fast-xml-parser';
-
-import { TidalResource, ResourceType } from '@/types/tidal';
+import { TidalResource, ResourceType, TidalTrack, TidalVideo } from '@/types/tidal';
 
 export function tidalResourceFromString(str: string): TidalResource | null {
     try {
@@ -41,7 +40,7 @@ export function sanitizeString(str: string): string {
 
 export function formatResourceName(
     template: string,
-    resource: Record<string, string | number | Record<string, string>[]>,
+    resource: TidalTrack | TidalVideo,
     options: {
         album_artist?: string;
         playlist_title?: string;
