@@ -26,6 +26,8 @@ export const downloadAndSaveTrack = async (
         const { urls, fileExtension } = parseTrackStream(streamInfo.data);
         updateTrackProgress(track => ({ ...track, fileExtension }));
 
+        /* -- CLIENT SIDE LOGIC: Create path, file exist check */
+        if(createDir()) { return; }
         const pathParts = formattedTitle.split('/');
         const fileName = pathParts.pop() + fileExtension;
         let currentDir = dirHandle;
@@ -41,9 +43,11 @@ export const downloadAndSaveTrack = async (
         } catch {
             // File does not exist, proceed with download
         }
-
+        /* -- END CLIENT SIDE LOGIC */
+        
         updateTrackProgress(track => ({ ...track, message: 'Downloading...', status: 'downloading' }));
 
+        /* -- STREAM DOWNLOAD -- */
         const streamData: ArrayBuffer[] = [];
         for (const url of urls) {
             const response = await axios.get(url, {
@@ -67,11 +71,14 @@ export const downloadAndSaveTrack = async (
         }
 
         const blob = new Blob(streamData);
-        
+
+        /* CLIENT SIDE LOGIC: Save blob to file */
         const fileHandle = await currentDir.getFileHandle(fileName, { create: true });
         const writable = await fileHandle.createWritable();
         await writable.write(blob);
         await writable.close();
+        /* END CLIENT SIDE LOGIC */
+        
         updateTrackProgress(track => ({ ...track, progress: 100, message: 'Saved', stream: undefined, status: 'completed', speed: 0 }));
 
     } catch (error) {
