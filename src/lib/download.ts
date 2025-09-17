@@ -72,14 +72,40 @@ const _downloadTrackLogic = async (
     auth: AuthResponse,
     config: Config,
     setProgress: React.Dispatch<React.SetStateAction<{ [id: string]: ProgressItem }>>,
-    parentId?: string
+    parentId?: string,
+    grandparentId?: string
 ) => {
     const updateTrackProgress = (updater: (trackProgress: ProgressItem) => ProgressItem) => {
-        if (parentId) {
-            setProgress(p => {
+        setProgress(p => {
+            if (grandparentId && parentId) {
+                // Artist -> Album -> Track
+                const grandparent = p[grandparentId];
+                if (!grandparent || !grandparent.items) return p;
+                const parent = grandparent.items[parentId];
+                if (!parent || !parent.items) return p;
+                const track = parent.items[trackId];
+                if (!track) return p;
+
+                const updatedTrack = updater(track);
+                const updatedParentItems = { ...parent.items, [trackId]: updatedTrack };
+                
+                const parentTotalProgress = Object.values(updatedParentItems).reduce((acc, item) => acc + item.progress, 0);
+                const parentProgress = Math.round(parentTotalProgress / (Object.keys(updatedParentItems).length * 100) * 100);
+
+                const updatedParent = { ...parent, progress: parentProgress, items: updatedParentItems };
+                const updatedGrandparentItems = { ...grandparent.items, [parentId]: updatedParent };
+
+                const grandparentTotalProgress = Object.values(updatedGrandparentItems).reduce((acc, item) => acc + item.progress, 0);
+                const grandparentProgress = Math.round(grandparentTotalProgress / (Object.keys(updatedGrandparentItems).length * 100) * 100);
+
+                return { ...p, [grandparentId]: { ...grandparent, progress: grandparentProgress, items: updatedGrandparentItems } };
+
+            } else if (parentId) {
+                // Album/Playlist -> Track
                 const parent = p[parentId];
                 if (!parent || !parent.items) return p;
                 const track = parent.items[trackId];
+                if (!track) return p;
                 const updatedTrack = updater(track);
                 const updatedItems = { ...parent.items, [trackId]: updatedTrack };
 
@@ -87,10 +113,13 @@ const _downloadTrackLogic = async (
                 const parentProgress = Math.round(totalProgress / (Object.keys(updatedItems).length * 100) * 100);
 
                 return { ...p, [parentId]: { ...parent, progress: parentProgress, items: updatedItems } };
-            });
-        } else {
-            setProgress(p => ({ ...p, [trackId]: updater(p[trackId]) }));
-        }
+            } else {
+                // Standalone Track
+                const track = p[trackId];
+                if (!track) return p;
+                return { ...p, [trackId]: updater(track) };
+            }
+        });
     };
 
     try {
@@ -164,6 +193,7 @@ export const downloadAlbum = async (
         }
 
         let offset = 0;
+        let totalTracks = 0;
         while (true) {
             const response = await axios.get(`https://api.tidal.com/v1/albums/${albumId}/items`, {
                 headers: { Authorization: `Bearer ${auth.access_token}` },
@@ -171,6 +201,7 @@ export const downloadAlbum = async (
             });
             
             const tracks = response.data.items.filter((item: any) => item.type === 'track').map((item: any) => item.item);
+            totalTracks += tracks.length;
 
             for (const track of tracks) {
                 const formattedTitle = formatResourceName(config.template.album, track, { album_artist: albumInfo.data.artist.name });
@@ -184,39 +215,41 @@ export const downloadAlbum = async (
                 };
 
                 setProgress(p => {
-                    const parent = p[parentId!];
-                    if (!parent || !parent.items) return p;
-
-                    const album = parent.items[albumId];
-                    if (!album) return p;
-
-                    const updatedAlbum = {
-                        ...album,
-                        items: {
-                            ...(album.items || {}),
-                            [track.id.toString()]: trackProgressItem,
-                        },
-                    };
-
-                    const updatedParentItems = {
-                        ...parent.items,
-                        [albumId]: updatedAlbum,
-                    };
-
-                    return {
-                        ...p,
-                        [parentId!]: {
-                            ...parent,
-                            items: updatedParentItems,
-                        },
-                    };
+                    if (parentId) {
+                        const parent = p[parentId];
+                        if (!parent || !parent.items) return p;
+                        const album = parent.items[albumId];
+                        if (!album) return p;
+                        const updatedAlbum = { ...album, items: { ...(album.items || {}), [track.id.toString()]: trackProgressItem } };
+                        return { ...p, [parentId]: { ...parent, items: { ...parent.items, [albumId]: updatedAlbum } } };
+                    } else {
+                        const album = p[albumId];
+                        if (!album) return p;
+                        return { ...p, [albumId]: { ...album, items: { ...(album.items || {}), [track.id.toString()]: trackProgressItem } } };
+                    }
                 });
                 
-                addTaskToQueue(() => _downloadTrackLogic(track.id.toString(), auth, config, setProgress, albumId));
+                addTaskToQueue(() => _downloadTrackLogic(track.id.toString(), auth, config, setProgress, albumId, parentId));
             }
 
             offset += response.data.limit;
             if (offset >= response.data.totalNumberOfItems) break;
+        }
+
+        if (parentId) {
+            setProgress(p => {
+                const parent = p[parentId];
+                if (!parent || !parent.items) return p;
+                const album = parent.items[albumId];
+                if (!album) return p;
+                return { ...p, [parentId]: { ...parent, items: { ...parent.items, [albumId]: { ...album, message: `Queued ${totalTracks} tracks` } } } };
+            });
+        } else {
+            setProgress(p => {
+                const album = p[albumId];
+                if (!album) return p;
+                return { ...p, [albumId]: { ...album, message: `Queued ${totalTracks} tracks` } };
+            });
         }
 
     } catch (error) {
@@ -283,6 +316,12 @@ export const downloadPlaylist = async (
             offset += response.data.limit;
             if (offset >= response.data.totalNumberOfItems) break;
         }
+
+        setProgress(p => {
+            const playlist = p[playlistId];
+            if (!playlist) return p;
+            return { ...p, [playlistId]: { ...playlist, message: `Queued ${trackIndex} tracks` } };
+        });
 
     } catch (error) {
         console.error(`Failed to download playlist ${playlistId}`, error);
