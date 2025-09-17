@@ -22,7 +22,7 @@ const App = () => {
         template: {
             track: '{artist} - {title}',
             video: '{artist} - {title}',
-            album: '{albim_artist}/{album}/{number:02d}. {artist} - {title}',
+            album: '{album_artist}/{album}/{number:02d}. {artist} - {title}',
             playlist: '{playlist}/{playlist_number:02d}. {artist} - {title}',
         },
         download: {
