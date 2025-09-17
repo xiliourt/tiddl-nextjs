@@ -7,7 +7,7 @@ import { Config } from '@/types/config';
 import CogIcon from '@/components/CogIcon';
 import { tidalResourceFromString } from '@/lib/utils';
 import Progress, { ProgressItem } from '@/components/Progress';
-import { downloadAlbum, downloadPlaylist, downloadArtist, downloadTrack, downloadFile } from '@/lib/download';
+import { downloadAlbum, downloadPlaylist, downloadArtist, downloadTrack } from '@/lib/download';
 
 const App = () => {
     const [url, setUrl] = useState('');

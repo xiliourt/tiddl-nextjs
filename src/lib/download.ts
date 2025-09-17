@@ -7,7 +7,7 @@ import { ProgressItem } from '@/components/Progress';
 import { parseTrackStream, formatResourceName } from '@/lib/utils';
 
 // --- Download Queue ---
-let downloadQueue: (() => Promise<void>)[] = [];
+const downloadQueue: (() => Promise<void>)[] = [];
 let currentlyDownloading = 0;
 let maxConcurrentDownloads = 4;
 
@@ -43,6 +43,70 @@ const addTaskToQueue = (task: () => Promise<void>) => {
     processQueue();
 }
 // --- End Download Queue ---
+
+interface TidalTrack {
+    id: number;
+    title: string;
+    duration: number;
+    replayGain: number;
+    peak: number;
+    allowStreaming: boolean;
+    streamReady: boolean;
+    adSupportedStreamReady: boolean;
+    djReady: boolean;
+    stemReady: boolean;
+    streamStartDate?: string | null;
+    premiumStreamingOnly: boolean;
+    trackNumber: number;
+    volumeNumber: number;
+    version?: string | null;
+    popularity: number;
+    copyright?: string | null;
+    bpm?: number | null;
+    url: string;
+    isrc: string;
+    editable: boolean;
+    explicit: boolean;
+    audioQuality: string;
+    audioModes: string[];
+    mediaMetadata: Record<string, string[]>;
+    artist?: { name: string } | null;
+    artists: { name: string }[];
+    album: { title: string; id: string };
+    mixes?: Record<string, string> | null;
+}
+
+interface TidalVideo {
+    id: number;
+    title: string;
+    volumeNumber: number;
+    trackNumber: number;
+    releaseDate?: string | null;
+    imagePath?: string | null;
+    imageId: string;
+    vibrantColor?: string | null;
+    duration: number;
+    quality: string;
+    streamReady: boolean;
+    adSupportedStreamReady: boolean;
+    djReady: boolean;
+    stemReady: boolean;
+    streamStartDate?: string | null;
+    allowStreaming: boolean;
+    explicit: boolean;
+    popularity: number;
+    type: string;
+    adsUrl?: string | null;
+    adsPrePaywallOnly: boolean;
+    artist?: { name: string } | null;
+    artists: { name: string }[];
+    album?: { title: string; id: string } | null;
+}
+
+interface TidalApiItem {
+    item: TidalTrack | TidalVideo;
+    type: 'track' | 'video';
+}
 
 const _downloadTrackLogic = async (
     trackId: string,
@@ -141,7 +205,7 @@ const _downloadTrackLogic = async (
                 await currentDir.getFileHandle(fileName);
                 updateTrackProgress(track => ({ ...track, progress: 100, message: 'Skipped - File Exists', status: 'skipped' }));
                 return;
-            } catch (error) {
+            } catch {
                 // File does not exist, proceed with download
             }
         }
@@ -240,7 +304,7 @@ export const downloadAlbum = async (
                 params: { countryCode: auth.user.countryCode, limit: 100, offset },
             });
             
-            const tracks = response.data.items.filter((item: any) => item.type === 'track').map((item: any) => item.item);
+            const tracks = response.data.items.filter((item: TidalApiItem) => item.type === 'track').map((item: TidalApiItem) => item.item);
             totalTracks += tracks.length;
 
             for (const track of tracks) {
@@ -334,7 +398,7 @@ export const downloadPlaylist = async (
                 params: { countryCode: auth.user.countryCode, limit: 100, offset },
             });
 
-            const tracks = response.data.items.filter((item: any) => item.type === 'track').map((item: any) => item.item);
+            const tracks = response.data.items.filter((item: TidalApiItem) => item.type === 'track').map((item: TidalApiItem) => item.item);
 
             for (const track of tracks) {
                 const formattedTitle = formatResourceName(config.template.playlist, track, { playlist_title: playlistInfo.data.title, playlist_index: trackIndex + 1 });
@@ -381,7 +445,7 @@ export const downloadArtist = async (
 ) => {
     const getArtistAlbums = async (artistId: string, singles: boolean) => {
         let offset = 0;
-        let allAlbums: any[] = [];
+        let allAlbums: { id: string; title: string }[] = [];
         while (true) {
             const albums = await axios.get(`https://api.tidal.com/v1/artists/${artistId}/albums`, {
                 headers: { Authorization: `Bearer ${auth.access_token}` },
@@ -405,7 +469,7 @@ export const downloadArtist = async (
             params: { countryCode: auth.user.countryCode },
         });
 
-        let albumsToDownload: any[] = [];
+        let albumsToDownload: { id: string; title: string }[] = [];
         if (config.download.singles_filter === 'only') {
             albumsToDownload = await getArtistAlbums(artistId, true);
         } else if (config.download.singles_filter === 'include') {

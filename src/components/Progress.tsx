@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, memo } from 'react';
-import { downloadFile } from '@/lib/download';
 
 export interface ProgressItem {
     id: string;
