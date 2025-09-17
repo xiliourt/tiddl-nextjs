@@ -27,7 +27,6 @@ export const downloadAndSaveTrack = async (
         updateTrackProgress(track => ({ ...track, fileExtension }));
 
         /* -- CLIENT SIDE LOGIC: Create path, file exist check */
-        if(createDir()) { return; }
         const pathParts = formattedTitle.split('/');
         const fileName = pathParts.pop() + fileExtension;
         let currentDir = dirHandle;
