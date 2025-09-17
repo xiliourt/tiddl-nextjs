@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, memo } from 'react';
-import { ProgressItem } from '@/types/download';
+import { ProgressItem } from '@/types/progress';
 
 interface ItemProps {
     item: ProgressItem;
