@@ -76,9 +76,8 @@ const _downloadTrackLogic = async (
                 const parentProgress = Math.round(parentTotalProgress / (Object.keys(updatedParentItems).length * 100) * 100);
                 const parentMessage = parentProgress === 100 ? 'Download complete' : `Downloaded ${completedParentItems} of ${Object.keys(updatedParentItems).length} tracks`;
                 const parentSpeed = Object.values(updatedParentItems).reduce((acc, item) => acc + (item.speed || 0), 0);
-                const parentSpeedString = parentSpeed > 0 ? `: ${parentSpeed.toFixed(2)} MB/s` : '';
 
-                const updatedParent = { ...parent, progress: parentProgress, items: updatedParentItems, message: `${parentMessage}${parentSpeedString}`, speed: parentSpeed };
+                const updatedParent = { ...parent, progress: parentProgress, items: updatedParentItems, message: parentMessage, speed: parentSpeed };
                 const updatedGrandparentItems = { ...grandparent.items, [parentId]: updatedParent };
 
                 const completedGrandparentItems = Object.values(updatedGrandparentItems).filter(item => item.progress === 100).length;
@@ -86,9 +85,8 @@ const _downloadTrackLogic = async (
                 const grandparentProgress = Math.round(grandparentTotalProgress / (Object.keys(updatedGrandparentItems).length * 100) * 100);
                 const grandparentMessage = grandparentProgress === 100 ? 'Download complete' : `Downloaded ${completedGrandparentItems} of ${Object.keys(updatedGrandparentItems).length} albums`;
                 const grandparentSpeed = Object.values(updatedGrandparentItems).reduce((acc, item) => acc + (item.speed || 0), 0);
-                const grandparentSpeedString = grandparentSpeed > 0 ? `: ${grandparentSpeed.toFixed(2)} MB/s` : '';
 
-                return { ...p, [grandparentId]: { ...grandparent, progress: grandparentProgress, items: updatedGrandparentItems, message: `${grandparentMessage}${grandparentSpeedString}`, speed: grandparentSpeed } };
+                return { ...p, [grandparentId]: { ...grandparent, progress: grandparentProgress, items: updatedGrandparentItems, message: grandparentMessage, speed: grandparentSpeed } };
 
             } else if (parentId) {
                 // Album/Playlist -> Track
@@ -104,9 +102,8 @@ const _downloadTrackLogic = async (
                 const parentProgress = Math.round(totalProgress / (Object.keys(updatedItems).length * 100) * 100);
                 const parentMessage = parentProgress === 100 ? 'Download complete' : `Downloaded ${completedItems} of ${Object.keys(updatedItems).length} tracks`;
                 const parentSpeed = Object.values(updatedItems).reduce((acc, item) => acc + (item.speed || 0), 0);
-                const parentSpeedString = parentSpeed > 0 ? `: ${parentSpeed.toFixed(2)} MB/s` : '';
 
-                return { ...p, [parentId]: { ...parent, progress: parentProgress, items: updatedItems, message: `${parentMessage}${parentSpeedString}`, speed: parentSpeed } };
+                return { ...p, [parentId]: { ...parent, progress: parentProgress, items: updatedItems, message: parentMessage, speed: parentSpeed } };
             } else {
                 // Standalone Track
                 const track = p[trackId];

@@ -37,8 +37,8 @@ const Track: React.FC<ItemProps> = memo(({ item }) => {
         <div className={`status-item ${item.status === 'skipped' ? 'skipped' : ''}`}>
             <div className="status-item-header">
                 <span className="status-item-title">{item.title}</span>
-                <SpeedDisplay speed={item.speed} />
                 <span className="status-item-message">{item.message}</span>
+                <SpeedDisplay speed={item.speed} />
             </div>
             <div className="status-item-body">
                 <div className="progress-bar-wrapper">
@@ -62,8 +62,8 @@ const Album: React.FC<ItemProps> = memo(({ item }) => {
             <div className="status-item-header" onClick={toggleCollapse}>
                 {isParent && <span className="collapse-icon">{isCollapsed ? '▶' : '▼'}</span>}
                 <span className="status-item-title">{item.title}</span>
-                <SpeedDisplay speed={item.speed} />
                 <span className="status-item-message">{item.message}</span>
+                <SpeedDisplay speed={item.speed} />
             </div>
             <div className="status-item-body">
                 <div className="progress-bar-wrapper">
@@ -92,8 +92,8 @@ const Playlist: React.FC<ItemProps> = memo(({ item }) => {
             <div className="status-item-header" onClick={toggleCollapse}>
                 {isParent && <span className="collapse-icon">{isCollapsed ? '▶' : '▼'}</span>}
                 <span className="status-item-title">{item.title}</span>
-                <SpeedDisplay speed={item.speed} />
                 <span className="status-item-message">{item.message}</span>
+                <SpeedDisplay speed={item.speed} />
             </div>
             <div className="status-item-body">
                 <div className="progress-bar-wrapper">
@@ -122,8 +122,8 @@ const Artist: React.FC<ItemProps> = memo(({ item }) => {
             <div className="status-item-header" onClick={toggleCollapse}>
                 {isParent && <span className="collapse-icon">{isCollapsed ? '▶' : '▼'}</span>}
                 <span className="status-item-title">{item.title}</span>
-                <SpeedDisplay speed={item.speed} />
                 <span className="status-item-message">{item.message}</span>
+                <SpeedDisplay speed={item.speed} />
             </div>
             <div className="status-item-body">
                 <div className="progress-bar-wrapper">
