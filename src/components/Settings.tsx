@@ -22,7 +22,7 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose, config, onConfigCh
         });
     };
 
-    const handleDownloadChange = (key: keyof Config['download'], value: any) => {
+    const handleDownloadChange = (key: keyof Config['download'], value: string | boolean) => {
         onConfigChange({
             ...config,
             download: {

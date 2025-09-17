@@ -1,92 +1,76 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { downloadFile } from '@/lib/download';
 
 export interface ProgressItem {
     id: string;
-    type: string;
+    type: 'track' | 'album' | 'playlist' | 'artist';
     title: string;
     progress: number;
     message: string;
-    items?: { [id: string]: ProgressItem };
+    status?: 'queued' | 'downloading' | 'completed' | 'error';
     stream?: ArrayBuffer;
     fileExtension?: string;
+    items?: { [id: string]: ProgressItem };
 }
 
-export const Track: React.FC<{ item: ProgressItem, onDownload: () => void }> = ({ item, onDownload }) => {
-    const isCompleted = item.progress === 100;
+interface ProgressProps {
+    items: { [id: string]: ProgressItem };
+}
+
+const Progress: React.FC<ProgressProps> = ({ items }) => {
+    const [collapsed, setCollapsed] = useState<{ [id: string]: boolean }>({});
+
+    const toggleCollapse = (id: string) => {
+        setCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
+    };
+
+    const renderItem = (item: ProgressItem) => {
+        const isParent = item.items && Object.keys(item.items).length > 0;
+        const isCollapsed = collapsed[item.id] ?? false;
+
+        const getProgressColor = () => {
+            if (item.status === 'error') return 'progress-bar-error';
+            if (item.progress === 100) return 'progress-bar-completed';
+            return 'progress-bar-downloading';
+        };
+
+        return (
+            <div key={item.id} className="status-item">
+                <div className="status-item-header" onClick={() => isParent && toggleCollapse(item.id)}>
+                    {isParent && (
+                        <span className="collapse-icon">{isCollapsed ? '▶' : '▼'}</span>
+                    )}
+                    <span className="status-item-title">{item.title}</span>
+                    <span className="status-item-message">{item.message}</span>
+                </div>
+                <div className="status-item-body">
+                    <div className="progress-bar-wrapper">
+                        <div className="progress-bar-container">
+                            <div className={`progress-bar ${getProgressColor()}`} style={{ width: `${item.progress}%` }}></div>
+                        </div>
+                    </div>
+                    {item.progress === 100 && (
+                        <button onClick={() => downloadFile(item)} className="button download-button">
+                            Download
+                        </button>
+                    )}
+                </div>
+                {isParent && !isCollapsed && (
+                    <div className="status-item-children">
+                        {Object.values(item.items!).map(renderItem)}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     return (
-        <div id={`track-${item.id}`} className={`status-item ${isCompleted ? 'completed' : ''}`}>
-            <strong>{item.type}: {item.title}</strong>
-            <div>{item.message}</div>
-            <progress value={item.progress} max="100" />
-            {isCompleted && <button className="button" onClick={onDownload}>Download</button>}
+        <div className="status">
+            {Object.values(items).map(renderItem)}
         </div>
     );
 };
 
-export const Album: React.FC<{ item: ProgressItem, onDownload: (item: ProgressItem) => void }> = ({ item, onDownload }) => {
-    const [isCollapsed, setIsCollapsed] = useState(true);
-    const isCompleted = item.progress === 100;
-    return (
-        <div id={`album-${item.id}`} className={`status-item ${isCompleted ? 'completed' : ''}`}>
-            <strong onClick={() => setIsCollapsed(!isCollapsed)} style={{ cursor: 'pointer' }}>
-                {isCollapsed ? '▶' : '▼'} {item.type}: {item.title}
-            </strong>
-            <div>{item.message}</div>
-            <progress value={item.progress} max="100" />
-            {isCompleted && <button className="button" onClick={() => onDownload(item)}>Download</button>}
-            {!isCollapsed && (
-                <div style={{ marginLeft: '20px', marginTop: '10px' }}>
-                    {Object.values(item.items || {}).map((track) => (
-                        <Track key={`${track.type}-${track.id}`} item={track} onDownload={() => onDownload(track)} />
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-};
-
-export const Playlist: React.FC<{ item: ProgressItem, onDownload: (item: ProgressItem) => void }> = ({ item, onDownload }) => {
-    const [isCollapsed, setIsCollapsed] = useState(true);
-    const isCompleted = item.progress === 100;
-    return (
-        <div id={`playlist-${item.id}`} className={`status-item ${isCompleted ? 'completed' : ''}`}>
-            <strong onClick={() => setIsCollapsed(!isCollapsed)} style={{ cursor: 'pointer' }}>
-                {isCollapsed ? '▶' : '▼'} {item.type}: {item.title}
-            </strong>
-            <div>{item.message}</div>
-            <progress value={item.progress} max="100" />
-            {isCompleted && <button className="button" onClick={() => onDownload(item)}>Download</button>}
-            {!isCollapsed && (
-                <div style={{ marginLeft: '20px', marginTop: '10px' }}>
-                    {Object.values(item.items || {}).map((track) => (
-                        <Track key={`${track.type}-${track.id}`} item={track} onDownload={() => onDownload(track)} />
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-};
-
-export const Artist: React.FC<{ item: ProgressItem, onDownload: (item: ProgressItem) => void }> = ({ item, onDownload }) => {
-    const [isCollapsed, setIsCollapsed] = useState(true);
-    const isCompleted = item.progress === 100;
-    return (
-        <div id={`artist-${item.id}`} className={`status-item ${isCompleted ? 'completed' : ''}`}>
-            <strong onClick={() => setIsCollapsed(!isCollapsed)} style={{ cursor: 'pointer' }}>
-                {isCollapsed ? '▶' : '▼'} {item.type}: {item.title}
-            </strong>
-            <div>{item.message}</div>
-            <progress value={item.progress} max="100" />
-            {isCompleted && <button className="button" onClick={() => onDownload(item)}>Download</button>}
-            {!isCollapsed && (
-                <div style={{ marginLeft: '20px', marginTop: '10px' }}>
-                    {Object.values(item.items || {}).map((album) => (
-                        <Album key={`${album.type}-${album.id}`} item={album} onDownload={onDownload} />
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-};
+export default Progress;

@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getDeviceAuth, getToken, refreshToken, AuthResponse } from '@/lib/auth';
 import Settings from '@/components/Settings';
 import { Config } from '@/types/config';
 import CogIcon from '@/components/CogIcon';
 import { tidalResourceFromString } from '@/lib/utils';
-import { ProgressItem, Track, Album, Playlist, Artist } from '@/components/Progress';
+import Progress, { ProgressItem } from '@/components/Progress';
 import { downloadAlbum, downloadPlaylist, downloadArtist, downloadTrack, downloadFile } from '@/lib/download';
 
 const App = () => {
@@ -31,6 +31,34 @@ const App = () => {
     });
     const [progress, setProgress] = useState<{ [id: string]: ProgressItem }>({});
 
+    const handleLogout = () => {
+        setAuth(null);
+        localStorage.removeItem('auth');
+    };
+
+    const handleRefreshToken = useCallback(async (refreshTokenValue: string | undefined) => {
+        if (!refreshTokenValue) {
+            console.error('No refresh token found');
+            handleLogout();
+            return;
+        }
+        try {
+            const newTokenData = await refreshToken(refreshTokenValue);
+            setAuth(prevAuth => {
+                const newAuth = {
+                    ...(prevAuth || {}),
+                    ...newTokenData,
+                    refresh_token: newTokenData.refresh_token || refreshTokenValue,
+                };
+                localStorage.setItem('auth', JSON.stringify(newAuth));
+                return newAuth as AuthResponse;
+            });
+        } catch (error) {
+            console.error('Failed to refresh token', error);
+            handleLogout();
+        }
+    }, []);
+
     useEffect(() => {
         const storedAuth = localStorage.getItem('auth');
         if (storedAuth) {
@@ -42,7 +70,7 @@ const App = () => {
         if (storedConfig) {
             setConfig(JSON.parse(storedConfig));
         }
-    }, []);
+    }, [handleRefreshToken]);
 
     useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -67,7 +95,7 @@ const App = () => {
                 localStorage.setItem('auth', JSON.stringify(token));
                 setShowLogin(false);
                 clearInterval(poll);
-            } catch (error) {
+            } catch {
                 // Ignore pending errors
             }
         }, deviceAuth.interval * 1000);
@@ -75,34 +103,6 @@ const App = () => {
         setTimeout(() => {
             clearInterval(poll);
         }, deviceAuth.expiresIn * 1000);
-    };
-
-    const handleLogout = () => {
-        setAuth(null);
-        localStorage.removeItem('auth');
-    };
-
-    const handleRefreshToken = async (refreshTokenValue: string | undefined) => {
-        if (!refreshTokenValue) {
-            console.error('No refresh token found');
-            handleLogout();
-            return;
-        }
-        try {
-            const newTokenData = await refreshToken(refreshTokenValue);
-            setAuth(prevAuth => {
-                const newAuth = {
-                    ...(prevAuth || {}),
-                    ...newTokenData,
-                    refresh_token: newTokenData.refresh_token || refreshTokenValue,
-                };
-                localStorage.setItem('auth', JSON.stringify(newAuth));
-                return newAuth as AuthResponse;
-            });
-        } catch (error) {
-            console.error('Failed to refresh token', error);
-            handleLogout();
-        }
     };
 
     const handleConfigChange = (newConfig: Config) => {
@@ -148,20 +148,7 @@ const App = () => {
                         <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Enter a Tidal URL" />
                         <button className="button" onClick={handleDownload}>Download</button>
                     </div>
-                    <div className="status">
-                        {Object.values(progress).map((p) => {
-                            if (p.type === 'artist') {
-                                return <Artist key={`${p.type}-${p.id}`} item={p} onDownload={downloadFile} />;
-                            }
-                            if (p.type === 'album') {
-                                return <Album key={`${p.type}-${p.id}`} item={p} onDownload={downloadFile} />;
-                            }
-                            if (p.type === 'playlist') {
-                                return <Playlist key={`${p.type}-${p.id}`} item={p} onDownload={downloadFile} />;
-                            }
-                            return <Track key={`${p.type}-${p.id}`} item={p} onDownload={() => downloadFile(p)} />;
-                        })}
-                    </div>
+                    <Progress items={progress} onDownload={downloadFile} />
                     <button onClick={handleLogout} className="button">Logout</button>
                     <button onClick={() => handleRefreshToken(auth.refresh_token!)} className="button">Refresh</button>
                 </>

@@ -1,6 +1,5 @@
 'use client';
 
-import { Config } from '@/types/config';
 import { XMLParser } from 'fast-xml-parser';
 
 export type ResourceType = 'track' | 'video' | 'album' | 'playlist' | 'artist';
@@ -36,7 +35,7 @@ export function tidalResourceFromString(str: string): TidalResource | null {
         }
 
         return { type, id };
-    } catch (error) {
+    } catch {
         return null;
     }
 }
@@ -47,7 +46,7 @@ export function sanitizeString(str: string): string {
 
 export function formatResourceName(
     template: string,
-    resource: any, // In a real app, you would have proper types for Track, Video, etc.
+    resource: Record<string, string | number | Record<string, string>[]>,
     options: {
         album_artist?: string;
         playlist_title?: string;
@@ -56,8 +55,8 @@ export function formatResourceName(
 ): string {
     const artist = resource.artist ? resource.artist.name : (resource.artists && resource.artists.length > 0 ? resource.artists[0].name : '');
     const features = resource.artists
-        ?.filter((a: any) => a.name !== artist)
-        .map((a: any) => a.name) ?? [];
+        ?.filter((a: { name: string }) => a.name !== artist)
+        .map((a: { name: string }) => a.name) ?? [];
 
     const resourceDict: Record<string, string | number> = {
         id: resource.id,
@@ -150,7 +149,7 @@ function parseManifestXML(xmlContent: string): { urls: string[]; codecs: string 
     return { urls, codecs };
 }
 
-export function parseTrackStream(trackStream: any): { urls: string[], fileExtension: string } {
+export function parseTrackStream(trackStream: { manifest: string; manifestMimeType: string; audioQuality: string; trackId: number; }): { urls: string[], fileExtension: string } {
     const decodedManifest = atob(trackStream.manifest);
     let urls: string[];
     let codecs: string;
