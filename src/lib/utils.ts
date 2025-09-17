@@ -2,12 +2,7 @@
 
 import { XMLParser } from 'fast-xml-parser';
 
-export type ResourceType = 'track' | 'video' | 'album' | 'playlist' | 'artist';
-
-export interface TidalResource {
-    type: ResourceType;
-    id: string;
-}
+import { TidalResource, ResourceType } from '@/types/tidal';
 
 export function tidalResourceFromString(str: string): TidalResource | null {
     try {

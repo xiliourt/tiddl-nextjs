@@ -1,12 +1,15 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { getDeviceAuth, getToken, refreshToken, AuthResponse } from '@/lib/auth';
+import { getDeviceAuth, getToken, refreshToken } from '@/lib/auth';
+import { AuthResponse } from '@/types/auth';
 import Settings from '@/components/Settings';
 import { Config } from '@/types/config';
 import CogIcon from '@/components/CogIcon';
 import { tidalResourceFromString } from '@/lib/utils';
-import Progress, { ProgressItem } from '@/components/Progress';
+import { TidalResource } from '@/types/tidal';
+import Progress from '@/components/Progress';
+import { ProgressItem } from '@/types/download';
 import { downloadAlbum, downloadPlaylist, downloadArtist, downloadTrack } from '@/lib/download';
 
 const App = () => {

@@ -1,112 +1,12 @@
 'use client';
 
 import axios from 'axios';
-import { AuthResponse } from '@/lib/auth';
+import { AuthResponse } from '@/types/auth';
 import { Config } from '@/types/config';
-import { ProgressItem } from '@/components/Progress';
+import { ProgressItem } from '@/types/download';
 import { parseTrackStream, formatResourceName } from '@/lib/utils';
-
-// --- Download Queue ---
-const downloadQueue: (() => Promise<void>)[] = [];
-let currentlyDownloading = 0;
-let maxConcurrentDownloads = 4;
-
-const setMaxConcurrentDownloads = (threads: number) => {
-    maxConcurrentDownloads = threads || 4;
-}
-
-const processQueue = async () => {
-    if (currentlyDownloading >= maxConcurrentDownloads || downloadQueue.length === 0) {
-        return;
-    }
-
-    while (currentlyDownloading < maxConcurrentDownloads && downloadQueue.length > 0) {
-        currentlyDownloading++;
-        const task = downloadQueue.shift();
-        if (task) {
-            try {
-                await task();
-            } catch (error) {
-                console.error("A download task failed:", error);
-            } finally {
-                currentlyDownloading--;
-                processQueue();
-            }
-        } else {
-             currentlyDownloading--;
-        }
-    }
-}
-
-const addTaskToQueue = (task: () => Promise<void>) => {
-    downloadQueue.push(task);
-    processQueue();
-}
-// --- End Download Queue ---
-
-interface TidalTrack {
-    id: number;
-    title: string;
-    duration: number;
-    replayGain: number;
-    peak: number;
-    allowStreaming: boolean;
-    streamReady: boolean;
-    adSupportedStreamReady: boolean;
-    djReady: boolean;
-    stemReady: boolean;
-    streamStartDate?: string | null;
-    premiumStreamingOnly: boolean;
-    trackNumber: number;
-    volumeNumber: number;
-    version?: string | null;
-    popularity: number;
-    copyright?: string | null;
-    bpm?: number | null;
-    url: string;
-    isrc: string;
-    editable: boolean;
-    explicit: boolean;
-    audioQuality: string;
-    audioModes: string[];
-    mediaMetadata: Record<string, string[]>;
-    artist?: { name: string } | null;
-    artists: { name: string }[];
-    album: { title: string; id: string };
-    mixes?: Record<string, string> | null;
-}
-
-interface TidalVideo {
-    id: number;
-    title: string;
-    volumeNumber: number;
-    trackNumber: number;
-    releaseDate?: string | null;
-    imagePath?: string | null;
-    imageId: string;
-    vibrantColor?: string | null;
-    duration: number;
-    quality: string;
-    streamReady: boolean;
-    adSupportedStreamReady: boolean;
-    djReady: boolean;
-    stemReady: boolean;
-    streamStartDate?: string | null;
-    allowStreaming: boolean;
-    explicit: boolean;
-    popularity: number;
-    type: string;
-    adsUrl?: string | null;
-    adsPrePaywallOnly: boolean;
-    artist?: { name: string } | null;
-    artists: { name: string }[];
-    album?: { title: string; id: string } | null;
-}
-
-interface TidalApiItem {
-    item: TidalTrack | TidalVideo;
-    type: 'track' | 'video';
-}
+import { addTaskToQueue, setMaxConcurrentDownloads } from '@/lib/queue';
+import { TidalApiItem } from '@/types/tidal';
 
 const _downloadTrackLogic = async (
     trackId: string,

@@ -1,21 +1,7 @@
 'use client';
 
 import React, { useState, memo } from 'react';
-
-export interface ProgressItem {
-    id: string;
-    type: 'track' | 'album' | 'playlist' | 'artist';
-    title: string;
-    progress: number;
-    message: string;
-    status?: 'queued' | 'downloading' | 'completed' | 'error' | 'skipped';
-    speed?: number;
-    startTime?: number;
-    downloadedBytes?: number;
-    stream?: ArrayBuffer;
-    fileExtension?: string;
-    items?: { [id: string]: ProgressItem };
-}
+import { ProgressItem } from '@/types/download';
 
 interface ItemProps {
     item: ProgressItem;
@@ -53,7 +39,7 @@ const Track: React.FC<ItemProps> = memo(({ item }) => {
 });
 Track.displayName = 'Track';
 
-const Album: React.FC<ItemProps> = memo(({ item }) => {
+const ParentProgressItem: React.FC<ItemProps> = memo(({ item }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const toggleCollapse = () => setIsCollapsed(prev => !prev);
     const isParent = item.items && Object.keys(item.items).length > 0;
@@ -75,73 +61,18 @@ const Album: React.FC<ItemProps> = memo(({ item }) => {
             </div>
             {isParent && !isCollapsed && (
                 <div className="status-item-children">
-                    {Object.values(item.items!).map(track => <Track key={track.id} item={track} />)}
+                    {Object.values(item.items!).map(childItem => {
+                        if (childItem.type === 'track') {
+                            return <Track key={childItem.id} item={childItem} />;
+                        }
+                        return <ParentProgressItem key={childItem.id} item={childItem} />;
+                    })}
                 </div>
             )}
         </div>
     );
 });
-Album.displayName = 'Album';
-
-const Playlist: React.FC<ItemProps> = memo(({ item }) => {
-    const [isCollapsed, setIsCollapsed] = useState(true);
-    const toggleCollapse = () => setIsCollapsed(prev => !prev);
-    const isParent = item.items && Object.keys(item.items).length > 0;
-
-    return (
-        <div className={`status-item ${item.status === 'skipped' ? 'skipped' : ''}`}>
-            <div className="status-item-header" onClick={toggleCollapse}>
-                {isParent && <span className="collapse-icon">{isCollapsed ? '▶' : '▼'}</span>}
-                <span className="status-item-title">{item.title}</span>
-                <span className="status-item-message">{item.message}</span>
-                <SpeedDisplay speed={item.speed} />
-            </div>
-            <div className="status-item-body">
-                <div className="progress-bar-wrapper">
-                    <div className="progress-bar-container">
-                        <div className={`progress-bar ${getProgressColor(item)}`} style={{ width: `${item.progress}%` }}></div>
-                    </div>
-                </div>
-            </div>
-            {isParent && !isCollapsed && (
-                <div className="status-item-children">
-                    {Object.values(item.items!).map(track => <Track key={track.id} item={track} />)}
-                </div>
-            )}
-        </div>
-    );
-});
-Playlist.displayName = 'Playlist';
-
-const Artist: React.FC<ItemProps> = memo(({ item }) => {
-    const [isCollapsed, setIsCollapsed] = useState(true);
-    const toggleCollapse = () => setIsCollapsed(prev => !prev);
-    const isParent = item.items && Object.keys(item.items).length > 0;
-
-    return (
-        <div className={`status-item ${item.status === 'skipped' ? 'skipped' : ''}`}>
-            <div className="status-item-header" onClick={toggleCollapse}>
-                {isParent && <span className="collapse-icon">{isCollapsed ? '▶' : '▼'}</span>}
-                <span className="status-item-title">{item.title}</span>
-                <span className="status-item-message">{item.message}</span>
-                <SpeedDisplay speed={item.speed} />
-            </div>
-            <div className="status-item-body">
-                <div className="progress-bar-wrapper">
-                    <div className="progress-bar-container">
-                        <div className={`progress-bar ${getProgressColor(item)}`} style={{ width: `${item.progress}%` }}></div>
-                    </div>
-                </div>
-            </div>
-            {isParent && !isCollapsed && (
-                <div className="status-item-children">
-                    {Object.values(item.items!).map(album => <Album key={album.id} item={album} />)}
-                </div>
-            )}
-        </div>
-    );
-});
-Artist.displayName = 'Artist';
+ParentProgressItem.displayName = 'ParentProgressItem';
 
 
 interface ProgressProps {
@@ -152,18 +83,10 @@ const Progress: React.FC<ProgressProps> = ({ items }) => {
     return (
         <div className="status">
             {Object.values(items).map((item) => {
-                switch (item.type) {
-                    case 'track':
-                        return <Track key={item.id} item={item} />;
-                    case 'album':
-                        return <Album key={item.id} item={item} />;
-                    case 'playlist':
-                        return <Playlist key={item.id} item={item} />;
-                    case 'artist':
-                        return <Artist key={item.id} item={item} />;
-                    default:
-                        return null;
+                if (item.type === 'track') {
+                    return <Track key={item.id} item={item} />;
                 }
+                return <ParentProgressItem key={item.id} item={item} />;
             })}
         </div>
     );

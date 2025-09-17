@@ -1,42 +1,11 @@
 'use client';
 
 import axios from 'axios';
+import { AuthDeviceResponse, AuthResponse } from '@/types/auth';
 
 const AUTH_URL = 'https://auth.tidal.com/v1/oauth2';
 const CLIENT_ID = 'zU4XHVVkc2tDPo4t';
 const CLIENT_SECRET = 'VJKhDFqJPqvsPVNBV6ukXTJmwlvbttP7wlMlrc72se4=';
-
-export interface AuthDeviceResponse {
-    deviceCode: string;
-    userCode: string;
-    verificationUri: string;
-    verificationUriComplete: string;
-    expiresIn: number;
-    interval: number;
-}
-
-export interface AuthResponse {
-    access_token: string;
-    refresh_token?: string;
-    expires_in: number;
-    token_type: string;
-    user: {
-        userId: number;
-        email: string;
-        countryCode: string;
-        fullName: string;
-        firstName: string;
-        lastName: string;
-        nickname: string;
-        username: string;
-        address: string;
-        created: number;
-        updated: number;
-        facebookUid: number;
-        appleUid: string;
-    };
-    user_id: number;
-}
 
 export async function getDeviceAuth(): Promise<AuthDeviceResponse> {
     const response = await axios.post(
