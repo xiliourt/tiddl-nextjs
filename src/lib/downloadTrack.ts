@@ -47,7 +47,7 @@ export const downloadAndSaveTrack = async (
         
         updateTrackProgress(track => ({ ...track, message: 'Downloading...', status: 'downloading' }));
 
-        /* -- STREAM DOWNLOAD -- */
+        /* -- SERVER OR CLIENT: Track Download -- */
         const streamData: ArrayBuffer[] = [];
         for (const url of urls) {
             const response = await axios.get(url, {
