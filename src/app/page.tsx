@@ -5,7 +5,7 @@ import { getDeviceAuth, getToken, refreshToken } from '@/lib/auth';
 import { tidalResourceFromString } from '@/lib/utils';
 import { downloadAlbum, downloadPlaylist, downloadArtist, downloadTrack } from '@/lib/download';
 import { AuthResponse } from '@/types/auth';
-import { ProgressItem } from '@/types/download';
+import { ProgressItem } from '@/types/progress';
 import { Config } from '@/types/config';
 import { TidalResource } from '@/types/tidal';
 import Settings from '@/components/Settings';
