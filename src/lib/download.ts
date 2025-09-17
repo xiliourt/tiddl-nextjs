@@ -117,9 +117,16 @@ const _downloadTrackLogic = async (
         updateTrackProgress(track => ({ ...track, fileExtension }));
 
         if (dirHandle) {
-            const fileName = `${formattedTitle}${fileExtension}`;
+            const pathParts = formattedTitle.split('/');
+            const fileName = pathParts.pop() + fileExtension;
+            let currentDir = dirHandle;
+
+            for (const part of pathParts) {
+                currentDir = await currentDir.getDirectoryHandle(part, { create: true });
+            }
+
             try {
-                await dirHandle.getFileHandle(fileName);
+                await currentDir.getFileHandle(fileName);
                 updateTrackProgress(track => ({ ...track, progress: 100, message: 'Skipped - File Exists', status: 'skipped' }));
                 return;
             } catch (error) {
@@ -146,8 +153,15 @@ const _downloadTrackLogic = async (
         const blob = new Blob(streamData);
         
         if (dirHandle) {
-            const fileName = `${formattedTitle}${fileExtension}`;
-            const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
+            const pathParts = formattedTitle.split('/');
+            const fileName = pathParts.pop() + fileExtension;
+            let currentDir = dirHandle;
+
+            for (const part of pathParts) {
+                currentDir = await currentDir.getDirectoryHandle(part, { create: true });
+            }
+
+            const fileHandle = await currentDir.getFileHandle(fileName, { create: true });
             const writable = await fileHandle.createWritable();
             await writable.write(blob);
             await writable.close();
