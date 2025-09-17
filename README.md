@@ -30,4 +30,4 @@ A full client-side browser-based Tidal downloader, with easy authentication supp
 
 
 ## For personal use only. Support your favourite artists - buy their albums, see their shows!
-_Created as a hobby project / for educational purposes and personal use only._
+_Created as a hobby project / for educational purposes. For personal use only._
