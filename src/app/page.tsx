@@ -155,17 +155,15 @@ const App = () => {
             <h1>Tiddl-NextJS</h1>
             {auth ? (
                 <>
-                    <div className="url-bar">
-                        <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Enter a Tidal URL" />
-                        <button className="button" onClick={handleDownload}>Download</button>
-                    </div>
-                    <div className="folder-selection">
-                        {'showDirectoryPicker' in window ? (
-                            <button className="button" onClick={selectDirectory}>Select Download Folder</button>
-                        ) : (
-                            <p>Your browser does not support direct folder downloads, or you are not on a secure connection (https).</p>
-                        )}
-                        {dirHandle && <p>Selected Folder: <strong>{dirHandle.name}</strong></p>}
+                    <div className="url-bar-container">
+                        <div className="url-bar">
+                            <button className="button icon-button" onClick={selectDirectory}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                            </button>
+                            <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Enter a Tidal URL" />
+                            <button className="button" onClick={handleDownload}>Download</button>
+                        </div>
+                        {dirHandle && <p className="selected-folder">Selected Folder: <strong>{dirHandle.name}</strong></p>}
                     </div>
                     <Progress items={progress} />
                     <div className="logout-button-container">

@@ -55,6 +55,7 @@ h2 {
     display: flex;
     justify-content: center;
     margin-bottom: 2rem;
+    width: 85%;
 }
 
 .url-bar input {
@@ -74,15 +75,21 @@ h2 {
     cursor: pointer;
 }
 
-.folder-selection {
+.url-bar-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     margin-bottom: 1rem;
 }
 
-.folder-selection p {
-    margin-left: 1rem;
+.selected-folder {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.icon-button {
+    padding: 0.5rem;
+    margin-right: 0.5rem;
 }
 
 .status {
