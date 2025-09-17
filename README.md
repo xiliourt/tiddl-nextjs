@@ -1,5 +1,5 @@
 # Next.JS / React Tidal Downloader
-A full client-side browser-based Tidal downloader, with easy authentication support, advanced configuration settings (such as path and naming schemes), etc.
+A full client-side browser-based Tidal downloader, with easy authentication support, advanced configuration settings (such as path and naming schemes), multi threading, and a simplistic UI for a user friendly experience.
 
 ### Features
 - Easy authentication via generated login authentication link at first load
