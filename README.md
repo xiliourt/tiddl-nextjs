@@ -19,6 +19,7 @@ A simple next.js application to download tidal URLs locally.
   - Catch unexpected Tidal API responses
     - Add models for Tracks, Albums, Artists, Playlist and Video calls, ensuring received data matches
     - Process non 200 status codes, outputting code + response to user
+- Clean up code (ie Progress.tsx has a lot of repeated code, it could be one function that handles things based on 'type' ('track', 'album', 'artist', etc)
 
 ### Outside of Scope
 - Remote downloading _(ie server side downloads, rather than client side local downloading)_
