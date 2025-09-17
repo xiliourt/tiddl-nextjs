@@ -8,11 +8,13 @@ File system access functionality requires https in most browsers, as such either
 **Option 1**
 
 ```npm run dev```
+
 Connect via https://127.0.0.1:3000
 
 **Option 2**
 
 ```npm run build && npm run start```
+
 Place it behind a reverse proxy pointing to http://{ip}:3000, have the proxy add a certificate.
 
 # Next.JS / React Tidal Downloader
