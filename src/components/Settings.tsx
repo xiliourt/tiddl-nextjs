@@ -22,7 +22,7 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose, config, onConfigCh
         });
     };
 
-    const handleDownloadChange = (key: keyof Config['download'], value: string | boolean) => {
+    const handleDownloadChange = (key: keyof Config['download'], value: string | boolean | number) => {
         onConfigChange({
             ...config,
             download: {
@@ -80,6 +80,10 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose, config, onConfigCh
                             <button onClick={() => handleDownloadChange('download_video', true)} className={config.download.download_video ? 'active' : ''}>True</button>
                             <button onClick={() => handleDownloadChange('download_video', false)} className={!config.download.download_video ? 'active' : ''}>False</button>
                         </div>
+                    </div>
+                    <div className="settings-item">
+                        <label>Threads:</label>
+                        <input type="number" name="threads" value={config.download.threads} onChange={(e) => handleDownloadChange('threads', parseInt(e.target.value, 10))} />
                     </div>
                 </div>
                 <div className="settings-submit-section">

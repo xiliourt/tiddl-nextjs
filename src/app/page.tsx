@@ -27,6 +27,7 @@ const App = () => {
             quality: 'HIGH',
             singles_filter: 'include',
             download_video: false,
+            threads: 4,
         },
     });
     const [progress, setProgress] = useState<{ [id: string]: ProgressItem }>({});
