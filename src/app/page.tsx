@@ -146,7 +146,7 @@ const App = () => {
             return;
         }
 
-        const downloadFunctions: { [key: string]: (id: string, auth: AuthResponse, config: Config, setProgress: React.Dispatch<React.SetStateAction<{ [id: string]: ProgressItem }>>, dirHandle: FileSystemDirectoryHandle | null) => void } = {
+        const downloadFunctions: { [key: string]: (id: string, auth: AuthResponse, config: Config, setProgress: React.Dispatch<React.SetStateAction<{ [id: string]: ProgressItem }>>, dirHandle: FileSystemDirectoryHandle) => void } = {
             track: downloadTrack,
             album: downloadAlbum,
             playlist: downloadPlaylist,
