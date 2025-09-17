@@ -89,16 +89,20 @@ const _downloadTrackLogic = async (
                 const updatedTrack = updater(track);
                 const updatedParentItems = { ...parent.items, [trackId]: updatedTrack };
                 
+                const completedParentItems = Object.values(updatedParentItems).filter(item => item.progress === 100).length;
                 const parentTotalProgress = Object.values(updatedParentItems).reduce((acc, item) => acc + item.progress, 0);
                 const parentProgress = Math.round(parentTotalProgress / (Object.keys(updatedParentItems).length * 100) * 100);
+                const parentMessage = parentProgress === 100 ? 'Download complete' : `Downloaded ${completedParentItems} of ${Object.keys(updatedParentItems).length} tracks`;
 
-                const updatedParent = { ...parent, progress: parentProgress, items: updatedParentItems };
+                const updatedParent = { ...parent, progress: parentProgress, items: updatedParentItems, message: parentMessage };
                 const updatedGrandparentItems = { ...grandparent.items, [parentId]: updatedParent };
 
+                const completedGrandparentItems = Object.values(updatedGrandparentItems).filter(item => item.progress === 100).length;
                 const grandparentTotalProgress = Object.values(updatedGrandparentItems).reduce((acc, item) => acc + item.progress, 0);
                 const grandparentProgress = Math.round(grandparentTotalProgress / (Object.keys(updatedGrandparentItems).length * 100) * 100);
+                const grandparentMessage = grandparentProgress === 100 ? 'Download complete' : `Downloaded ${completedGrandparentItems} of ${Object.keys(updatedGrandparentItems).length} albums`;
 
-                return { ...p, [grandparentId]: { ...grandparent, progress: grandparentProgress, items: updatedGrandparentItems } };
+                return { ...p, [grandparentId]: { ...grandparent, progress: grandparentProgress, items: updatedGrandparentItems, message: grandparentMessage } };
 
             } else if (parentId) {
                 // Album/Playlist -> Track
@@ -109,10 +113,12 @@ const _downloadTrackLogic = async (
                 const updatedTrack = updater(track);
                 const updatedItems = { ...parent.items, [trackId]: updatedTrack };
 
+                const completedItems = Object.values(updatedItems).filter(item => item.progress === 100).length;
                 const totalProgress = Object.values(updatedItems).reduce((acc, item) => acc + item.progress, 0);
                 const parentProgress = Math.round(totalProgress / (Object.keys(updatedItems).length * 100) * 100);
+                const parentMessage = parentProgress === 100 ? 'Download complete' : `Downloaded ${completedItems} of ${Object.keys(updatedItems).length} tracks`;
 
-                return { ...p, [parentId]: { ...parent, progress: parentProgress, items: updatedItems } };
+                return { ...p, [parentId]: { ...parent, progress: parentProgress, items: updatedItems, message: parentMessage } };
             } else {
                 // Standalone Track
                 const track = p[trackId];
@@ -236,19 +242,20 @@ export const downloadAlbum = async (
             if (offset >= response.data.totalNumberOfItems) break;
         }
 
+        const finalMessage = `Queued ${totalTracks} tracks`;
         if (parentId) {
             setProgress(p => {
                 const parent = p[parentId];
                 if (!parent || !parent.items) return p;
                 const album = parent.items[albumId];
                 if (!album) return p;
-                return { ...p, [parentId]: { ...parent, items: { ...parent.items, [albumId]: { ...album, message: `Queued ${totalTracks} tracks` } } } };
+                return { ...p, [parentId]: { ...parent, items: { ...parent.items, [albumId]: { ...album, message: finalMessage } } } };
             });
         } else {
             setProgress(p => {
                 const album = p[albumId];
                 if (!album) return p;
-                return { ...p, [albumId]: { ...album, message: `Queued ${totalTracks} tracks` } };
+                return { ...p, [albumId]: { ...album, message: finalMessage } };
             });
         }
 
@@ -399,6 +406,12 @@ export const downloadArtist = async (
         for (const album of albumsToDownload) {
             downloadAlbum(album.id.toString(), auth, config, setProgress, artistId);
         }
+
+        setProgress(p => {
+            const artist = p[artistId];
+            if (!artist) return p;
+            return { ...p, [artistId]: { ...artist, message: 'Downloading...' } };
+        });
 
     } catch (error) {
         console.error(`Failed to download artist ${artistId}`, error);
