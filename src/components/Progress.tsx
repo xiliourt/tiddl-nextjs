@@ -11,6 +11,8 @@ export interface ProgressItem {
     message: string;
     status?: 'queued' | 'downloading' | 'completed' | 'error' | 'skipped';
     speed?: number;
+    startTime?: number;
+    downloadedBytes?: number;
     stream?: ArrayBuffer;
     fileExtension?: string;
     items?: { [id: string]: ProgressItem };

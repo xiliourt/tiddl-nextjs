@@ -74,19 +74,23 @@ const _downloadTrackLogic = async (
                 const completedParentItems = Object.values(updatedParentItems).filter(item => item.progress === 100).length;
                 const parentTotalProgress = Object.values(updatedParentItems).reduce((acc, item) => acc + item.progress, 0);
                 const parentProgress = Math.round(parentTotalProgress / (Object.keys(updatedParentItems).length * 100) * 100);
+                const parentDownloadedBytes = Object.values(updatedParentItems).reduce((acc, item) => acc + (item.downloadedBytes || 0), 0);
+                const parentTimeElapsed = Date.now() - (parent.startTime || 0);
+                const parentSpeed = parentTimeElapsed > 0 ? (parentDownloadedBytes / parentTimeElapsed) * 1000 / (1024 * 1024) : 0;
                 const parentMessage = parentProgress === 100 ? 'Download complete' : `Downloaded ${completedParentItems} of ${Object.keys(updatedParentItems).length} tracks`;
-                const parentSpeed = Object.values(updatedParentItems).reduce((acc, item) => acc + (item.speed || 0), 0);
 
-                const updatedParent = { ...parent, progress: parentProgress, items: updatedParentItems, message: parentMessage, speed: parentSpeed };
+                const updatedParent = { ...parent, progress: parentProgress, items: updatedParentItems, message: parentMessage, speed: parentSpeed, downloadedBytes: parentDownloadedBytes };
                 const updatedGrandparentItems = { ...grandparent.items, [parentId]: updatedParent };
 
                 const completedGrandparentItems = Object.values(updatedGrandparentItems).filter(item => item.progress === 100).length;
                 const grandparentTotalProgress = Object.values(updatedGrandparentItems).reduce((acc, item) => acc + item.progress, 0);
                 const grandparentProgress = Math.round(grandparentTotalProgress / (Object.keys(updatedGrandparentItems).length * 100) * 100);
+                const grandparentDownloadedBytes = Object.values(updatedGrandparentItems).reduce((acc, item) => acc + (item.downloadedBytes || 0), 0);
+                const grandparentTimeElapsed = Date.now() - (grandparent.startTime || 0);
+                const grandparentSpeed = grandparentTimeElapsed > 0 ? (grandparentDownloadedBytes / grandparentTimeElapsed) * 1000 / (1024 * 1024) : 0;
                 const grandparentMessage = grandparentProgress === 100 ? 'Download complete' : `Downloaded ${completedGrandparentItems} of ${Object.keys(updatedGrandparentItems).length} albums`;
-                const grandparentSpeed = Object.values(updatedGrandparentItems).reduce((acc, item) => acc + (item.speed || 0), 0);
 
-                return { ...p, [grandparentId]: { ...grandparent, progress: grandparentProgress, items: updatedGrandparentItems, message: grandparentMessage, speed: grandparentSpeed } };
+                return { ...p, [grandparentId]: { ...grandparent, progress: grandparentProgress, items: updatedGrandparentItems, message: grandparentMessage, speed: grandparentSpeed, downloadedBytes: grandparentDownloadedBytes } };
 
             } else if (parentId) {
                 // Album/Playlist -> Track
@@ -100,10 +104,12 @@ const _downloadTrackLogic = async (
                 const completedItems = Object.values(updatedItems).filter(item => item.progress === 100).length;
                 const totalProgress = Object.values(updatedItems).reduce((acc, item) => acc + item.progress, 0);
                 const parentProgress = Math.round(totalProgress / (Object.keys(updatedItems).length * 100) * 100);
+                const parentDownloadedBytes = Object.values(updatedItems).reduce((acc, item) => acc + (item.downloadedBytes || 0), 0);
+                const parentTimeElapsed = Date.now() - (parent.startTime || 0);
+                const parentSpeed = parentTimeElapsed > 0 ? (parentDownloadedBytes / parentTimeElapsed) * 1000 / (1024 * 1024) : 0;
                 const parentMessage = parentProgress === 100 ? 'Download complete' : `Downloaded ${completedItems} of ${Object.keys(updatedItems).length} tracks`;
-                const parentSpeed = Object.values(updatedItems).reduce((acc, item) => acc + (item.speed || 0), 0);
 
-                return { ...p, [parentId]: { ...parent, progress: parentProgress, items: updatedItems, message: parentMessage, speed: parentSpeed } };
+                return { ...p, [parentId]: { ...parent, progress: parentProgress, items: updatedItems, message: parentMessage, speed: parentSpeed, downloadedBytes: parentDownloadedBytes } };
             } else {
                 // Standalone Track
                 const track = p[trackId];
@@ -151,13 +157,13 @@ const _downloadTrackLogic = async (
                         const now = Date.now();
                         const bytesDiff = progressEvent.loaded - lastLoaded;
                         const timeDiff = now - lastTimestamp;
-                        const speed = (bytesDiff / timeDiff) * 1000 / (1024 * 1024); // MB/s
+                        const speed = timeDiff > 0 ? (bytesDiff / timeDiff) * 1000 / (1024 * 1024) : 0; // MB/s
                         
                         lastLoaded = progressEvent.loaded;
                         lastTimestamp = now;
 
                         const percentCompleted = Math.round((progressEvent.loaded / progressEvent.total) * 100);
-                        updateTrackProgress(track => ({ ...track, progress: percentCompleted, speed }));
+                        updateTrackProgress(track => ({ ...track, progress: percentCompleted, speed, downloadedBytes: progressEvent.loaded }));
                     }
                 },
             });
@@ -211,6 +217,8 @@ export const downloadAlbum = async (
             progress: 0,
             message: 'Fetching tracks...',
             items: {},
+            startTime: Date.now(),
+            downloadedBytes: 0,
         };
 
         if (parentId) {
@@ -313,6 +321,8 @@ export const downloadPlaylist = async (
                 progress: 0,
                 message: 'Fetching tracks...',
                 items: {},
+                startTime: Date.now(),
+                downloadedBytes: 0,
             }
         }));
 
@@ -428,6 +438,8 @@ export const downloadArtist = async (
                 progress: 0,
                 message: `Queued ${albumsToDownload.length} albums`,
                 items: albumItems,
+                startTime: Date.now(),
+                downloadedBytes: 0,
             }
         }));
 
