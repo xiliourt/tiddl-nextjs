@@ -3,7 +3,7 @@
 import axios from 'axios';
 import { AuthResponse } from '@/types/auth';
 import { Config } from '@/types/config';
-import { ProgressItem } from '@/types/download';
+import { ProgressItem } from '@/types/progress';
 import { formatResourceName } from '@/lib/utils';
 import { addTaskToQueue, setMaxConcurrentDownloads } from '@/lib/queue';
 import { TidalApiItem } from '@/types/tidal';
