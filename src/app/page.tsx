@@ -139,8 +139,15 @@ const App = () => {
 
     return (
         <div className="container">
-            <div className="settings-icon" onClick={() => setIsSettingsOpen(true)}>
-                <CogIcon />
+            <div className="top-right-actions">
+                {auth && (
+                    <>
+                        <button onClick={() => handleRefreshToken(auth.refresh_token!)} className="button">Refresh Token</button>
+                    </>
+                )}
+                <div className="settings-icon" onClick={() => setIsSettingsOpen(true)}>
+                    <CogIcon />
+                </div>
             </div>
             <h1>Tiddl-NextJS</h1>
             {auth ? (
@@ -150,18 +157,19 @@ const App = () => {
                         <button className="button" onClick={handleDownload}>Download</button>
                     </div>
                     <Progress items={progress} />
-                    <button onClick={handleLogout} className="button">Logout</button>
-                    <button onClick={() => handleRefreshToken(auth.refresh_token!)} className="button">Refresh</button>
+                    <div className="logout-button-container">
+                        <button onClick={handleLogout} className="button">Logout</button>
+                    </div>
                 </>
             ) : (
                 <>
                     <div className="login-container">
                         <button onClick={handleLogin} className="button">Login</button>
                         {showLogin && (
-                            <div className="login-block">
+                            <div className="login-prompt">
                                 <h2>Login with Tidal</h2>
-                                <p>Open the following URL in your browser:</p>
-                                <a href={`https://${loginUrl}`} target="_blank" rel="noopener noreferrer">{`https://${loginUrl}`}</a>
+                                <p>Click the button below to open the login page:</p>
+                                <a href={`https://${loginUrl}`} target="_blank" rel="noopener noreferrer" className="button login-prompt-link"><strong>Click to Authenticate</strong></a>
                                 <p>Expires in: {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}</p>
                             </div>
                         )}
