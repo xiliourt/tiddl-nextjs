@@ -12,6 +12,7 @@ A full client-side browser-based Tidal downloader, with easy authentication supp
 - In depth config, allowing customisation of even download directory structure and file naming 
 - Automatic token refreshing upon reload (also refreshable via the 'refresh token' button)
 - Purely client side - no API callbacks / server-side processing. Uses client-side axios calls.
+- Typescript for maintainability and reusability (_My first real attempt at ts/tsx - I'll clean it up to be true typescript over time_)
 
 ### Missing Features (to be added)
 - Video downloading support
