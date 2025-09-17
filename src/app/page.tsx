@@ -31,6 +31,16 @@ const App = () => {
         },
     });
     const [progress, setProgress] = useState<{ [id: string]: ProgressItem }>({});
+    const [dirHandle, setDirHandle] = useState<FileSystemDirectoryHandle | null>(null);
+
+    const selectDirectory = async () => {
+        try {
+            const handle = await window.showDirectoryPicker();
+            setDirHandle(handle);
+        } catch (error) {
+            console.error("Failed to select directory:", error);
+        }
+    };
 
     const handleLogout = () => {
         setAuth(null);
@@ -118,22 +128,15 @@ const App = () => {
             return;
         }
 
-        switch (resource.type) {
-            case 'track':
-                downloadTrack(resource.id, auth, config, setProgress);
-                break;
-            case 'video':
-                // downloadVideo(resource.id);
-                break;
-            case 'album':
-                downloadAlbum(resource.id, auth, config, setProgress);
-                break;
-            case 'playlist':
-                downloadPlaylist(resource.id, auth, config, setProgress);
-                break;
-            case 'artist':
-                downloadArtist(resource.id, auth, config, setProgress);
-                break;
+        const downloadFunctions: { [key: string]: (id: string, auth: AuthResponse, config: Config, setProgress: React.Dispatch<React.SetStateAction<{ [id: string]: ProgressItem }>>, dirHandle: FileSystemDirectoryHandle | null) => void } = {
+            track: downloadTrack,
+            album: downloadAlbum,
+            playlist: downloadPlaylist,
+            artist: downloadArtist,
+        };
+
+        if (resource.type in downloadFunctions) {
+            downloadFunctions[resource.type](resource.id, auth, config, setProgress, dirHandle);
         }
     };
 
@@ -155,6 +158,14 @@ const App = () => {
                     <div className="url-bar">
                         <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Enter a Tidal URL" />
                         <button className="button" onClick={handleDownload}>Download</button>
+                    </div>
+                    <div className="folder-selection">
+                        {'showDirectoryPicker' in window ? (
+                            <button className="button" onClick={selectDirectory}>Select Download Folder</button>
+                        ) : (
+                            <p>Your browser does not support direct folder downloads, or you are not on a secure connection (https).</p>
+                        )}
+                        {dirHandle && <p>Selected Folder: <strong>{dirHandle.name}</strong></p>}
                     </div>
                     <Progress items={progress} />
                     <div className="logout-button-container">

@@ -69,9 +69,11 @@ export const downloadFile = (item: ProgressItem) => {
 
 const _downloadTrackLogic = async (
     trackId: string,
+    formattedTitle: string,
     auth: AuthResponse,
     config: Config,
     setProgress: React.Dispatch<React.SetStateAction<{ [id: string]: ProgressItem }>>,
+    dirHandle: FileSystemDirectoryHandle | null,
     parentId?: string,
     grandparentId?: string
 ) => {
@@ -154,8 +156,18 @@ const _downloadTrackLogic = async (
         }
 
         const blob = new Blob(streamData);
-        const stream = await blob.arrayBuffer();
-        updateTrackProgress(track => ({ ...track, progress: 100, message: 'Download complete', stream, status: 'completed' }));
+        
+        if (dirHandle) {
+            const fileName = `${formattedTitle}${fileExtension}`;
+            const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            updateTrackProgress(track => ({ ...track, progress: 100, message: 'Saved', stream: undefined, status: 'completed' }));
+        } else {
+            const stream = await blob.arrayBuffer();
+            updateTrackProgress(track => ({ ...track, progress: 100, message: 'Download complete', stream, status: 'completed' }));
+        }
 
     } catch (error) {
         console.error(`Failed to download track ${trackId}`, error);
@@ -169,6 +181,7 @@ export const downloadAlbum = async (
     auth: AuthResponse,
     config: Config,
     setProgress: React.Dispatch<React.SetStateAction<{ [id: string]: ProgressItem }>>,
+    dirHandle: FileSystemDirectoryHandle | null,
     parentId?: string
 ) => {
     setMaxConcurrentDownloads(config.download.threads);
@@ -235,7 +248,7 @@ export const downloadAlbum = async (
                     }
                 });
                 
-                addTaskToQueue(() => _downloadTrackLogic(track.id.toString(), auth, config, setProgress, albumId, parentId));
+                addTaskToQueue(() => _downloadTrackLogic(track.id.toString(), formattedTitle, auth, config, setProgress, dirHandle, albumId, parentId));
             }
 
             offset += response.data.limit;
@@ -268,7 +281,8 @@ export const downloadPlaylist = async (
     playlistId: string,
     auth: AuthResponse,
     config: Config,
-    setProgress: React.Dispatch<React.SetStateAction<{ [id: string]: ProgressItem }>>
+    setProgress: React.Dispatch<React.SetStateAction<{ [id: string]: ProgressItem }>>,
+    dirHandle: FileSystemDirectoryHandle | null
 ) => {
     setMaxConcurrentDownloads(config.download.threads);
     try {
@@ -316,7 +330,7 @@ export const downloadPlaylist = async (
                     return { ...p, [playlistId]: { ...playlist, items: { ...(playlist.items || {}), [track.id.toString()]: trackProgressItem } } };
                 });
 
-                addTaskToQueue(() => _downloadTrackLogic(track.id.toString(), auth, config, setProgress, playlistId));
+                addTaskToQueue(() => _downloadTrackLogic(track.id.toString(), formattedTitle, auth, config, setProgress, dirHandle, playlistId));
                 trackIndex++;
             }
 
@@ -339,7 +353,8 @@ export const downloadArtist = async (
     artistId: string,
     auth: AuthResponse,
     config: Config,
-    setProgress: React.Dispatch<React.SetStateAction<{ [id: string]: ProgressItem }>>
+    setProgress: React.Dispatch<React.SetStateAction<{ [id: string]: ProgressItem }>>,
+    dirHandle: FileSystemDirectoryHandle | null
 ) => {
     const getArtistAlbums = async (artistId: string, singles: boolean) => {
         let offset = 0;
@@ -404,7 +419,7 @@ export const downloadArtist = async (
         }));
 
         for (const album of albumsToDownload) {
-            downloadAlbum(album.id.toString(), auth, config, setProgress, artistId);
+            downloadAlbum(album.id.toString(), auth, config, setProgress, dirHandle, artistId);
         }
 
         setProgress(p => {
@@ -422,7 +437,8 @@ export const downloadTrack = async (
     trackId: string,
     auth: AuthResponse,
     config: Config,
-    setProgress: React.Dispatch<React.SetStateAction<{ [id: string]: ProgressItem }>>
+    setProgress: React.Dispatch<React.SetStateAction<{ [id: string]: ProgressItem }>>,
+    dirHandle: FileSystemDirectoryHandle | null
 ) => {
     setMaxConcurrentDownloads(config.download.threads);
     try {
@@ -444,7 +460,7 @@ export const downloadTrack = async (
             }
         }));
 
-        addTaskToQueue(() => _downloadTrackLogic(trackId, auth, config, setProgress));
+        addTaskToQueue(() => _downloadTrackLogic(trackId, formattedTitle, auth, config, setProgress, dirHandle));
 
     } catch (error) {
         console.error(`Failed to fetch track info for ${trackId}`, error);

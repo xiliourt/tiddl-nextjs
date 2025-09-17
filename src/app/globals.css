@@ -74,6 +74,16 @@ h2 {
     cursor: pointer;
 }
 
+.folder-selection {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.folder-selection p {
+    margin-left: 1rem;
+}
+
 .status {
     margin-top: 2rem;
 }
