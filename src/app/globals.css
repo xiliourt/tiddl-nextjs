@@ -157,6 +157,14 @@ h2 {
     background-color: #f56565;
 }
 
+.progress-bar-skipped {
+    background-color: #4fd1c5;
+}
+
+.status-item.skipped {
+    border-color: #4fd1c5;
+}
+
 .download-button {
     margin-left: 1rem;
     background-color: #48bb78;

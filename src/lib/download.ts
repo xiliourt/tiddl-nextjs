@@ -44,29 +44,6 @@ const addTaskToQueue = (task: () => Promise<void>) => {
 }
 // --- End Download Queue ---
 
-
-export const downloadFile = (item: ProgressItem) => {
-    if (item.type === 'album' || item.type === 'playlist' || item.type === 'artist') {
-        if (item.items) {
-            for (const subItem of Object.values(item.items)) {
-                downloadFile(subItem);
-            }
-        }
-        return;
-    }
-
-    if (!item.stream) return;
-    const blob = new Blob([item.stream], { type: 'application/octet-stream' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${item.title}${item.fileExtension}`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-};
-
 const _downloadTrackLogic = async (
     trackId: string,
     formattedTitle: string,
@@ -131,8 +108,6 @@ const _downloadTrackLogic = async (
     };
 
     try {
-        updateTrackProgress(track => ({ ...track, message: 'Downloading...', status: 'downloading' }));
-
         const streamInfo = await axios.get(`https://api.tidal.com/v1/tracks/${trackId}/playbackinfo`, {
             headers: { Authorization: `Bearer ${auth.access_token}` },
             params: { audioquality: config.download.quality, playbackmode: 'STREAM', assetpresentation: 'FULL' },
@@ -140,6 +115,19 @@ const _downloadTrackLogic = async (
 
         const { urls, fileExtension } = parseTrackStream(streamInfo.data);
         updateTrackProgress(track => ({ ...track, fileExtension }));
+
+        if (dirHandle) {
+            const fileName = `${formattedTitle}${fileExtension}`;
+            try {
+                await dirHandle.getFileHandle(fileName);
+                updateTrackProgress(track => ({ ...track, progress: 100, message: 'Skipped - File Exists', status: 'skipped' }));
+                return;
+            } catch (error) {
+                // File does not exist, proceed with download
+            }
+        }
+
+        updateTrackProgress(track => ({ ...track, message: 'Downloading...', status: 'downloading' }));
 
         const streamData: ArrayBuffer[] = [];
         for (const url of urls) {
@@ -164,9 +152,6 @@ const _downloadTrackLogic = async (
             await writable.write(blob);
             await writable.close();
             updateTrackProgress(track => ({ ...track, progress: 100, message: 'Saved', stream: undefined, status: 'completed' }));
-        } else {
-            const stream = await blob.arrayBuffer();
-            updateTrackProgress(track => ({ ...track, progress: 100, message: 'Download complete', stream, status: 'completed' }));
         }
 
     } catch (error) {

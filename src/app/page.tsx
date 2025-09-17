@@ -122,6 +122,11 @@ const App = () => {
     };
 
     const handleDownload = () => {
+        if (!dirHandle) {
+            alert('Please select a download folder first.');
+            return;
+        }
+
         const resource = tidalResourceFromString(url);
         if (!resource || !auth) {
             alert('Invalid Tidal URL or not logged in');

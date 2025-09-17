@@ -9,7 +9,7 @@ export interface ProgressItem {
     title: string;
     progress: number;
     message: string;
-    status?: 'queued' | 'downloading' | 'completed' | 'error';
+    status?: 'queued' | 'downloading' | 'completed' | 'error' | 'skipped';
     stream?: ArrayBuffer;
     fileExtension?: string;
     items?: { [id: string]: ProgressItem };
@@ -21,13 +21,14 @@ interface ItemProps {
 
 const getProgressColor = (item: ProgressItem) => {
     if (item.status === 'error') return 'progress-bar-error';
+    if (item.status === 'skipped') return 'progress-bar-skipped';
     if (item.progress === 100) return 'progress-bar-completed';
     return 'progress-bar-downloading';
 };
 
 const Track: React.FC<ItemProps> = memo(({ item }) => {
     return (
-        <div className="status-item">
+        <div className={`status-item ${item.status === 'skipped' ? 'skipped' : ''}`}>
             <div className="status-item-header">
                 <span className="status-item-title">{item.title}</span>
                 <span className="status-item-message">{item.message}</span>
@@ -38,11 +39,6 @@ const Track: React.FC<ItemProps> = memo(({ item }) => {
                         <div className={`progress-bar ${getProgressColor(item)}`} style={{ width: `${item.progress}%` }}></div>
                     </div>
                 </div>
-                {item.progress === 100 && (
-                    <button onClick={() => downloadFile(item)} className="button download-button">
-                        Download
-                    </button>
-                )}
             </div>
         </div>
     );
@@ -55,7 +51,7 @@ const Album: React.FC<ItemProps> = memo(({ item }) => {
     const isParent = item.items && Object.keys(item.items).length > 0;
 
     return (
-        <div className="status-item">
+        <div className={`status-item ${item.status === 'skipped' ? 'skipped' : ''}`}>
             <div className="status-item-header" onClick={toggleCollapse}>
                 {isParent && <span className="collapse-icon">{isCollapsed ? '▶' : '▼'}</span>}
                 <span className="status-item-title">{item.title}</span>
@@ -67,11 +63,6 @@ const Album: React.FC<ItemProps> = memo(({ item }) => {
                         <div className={`progress-bar ${getProgressColor(item)}`} style={{ width: `${item.progress}%` }}></div>
                     </div>
                 </div>
-                {item.progress === 100 && (
-                    <button onClick={() => downloadFile(item)} className="button download-button">
-                        Download
-                    </button>
-                )}
             </div>
             {isParent && !isCollapsed && (
                 <div className="status-item-children">
@@ -89,7 +80,7 @@ const Playlist: React.FC<ItemProps> = memo(({ item }) => {
     const isParent = item.items && Object.keys(item.items).length > 0;
 
     return (
-        <div className="status-item">
+        <div className={`status-item ${item.status === 'skipped' ? 'skipped' : ''}`}>
             <div className="status-item-header" onClick={toggleCollapse}>
                 {isParent && <span className="collapse-icon">{isCollapsed ? '▶' : '▼'}</span>}
                 <span className="status-item-title">{item.title}</span>
@@ -101,11 +92,6 @@ const Playlist: React.FC<ItemProps> = memo(({ item }) => {
                         <div className={`progress-bar ${getProgressColor(item)}`} style={{ width: `${item.progress}%` }}></div>
                     </div>
                 </div>
-                {item.progress === 100 && (
-                    <button onClick={() => downloadFile(item)} className="button download-button">
-                        Download
-                    </button>
-                )}
             </div>
             {isParent && !isCollapsed && (
                 <div className="status-item-children">
@@ -123,7 +109,7 @@ const Artist: React.FC<ItemProps> = memo(({ item }) => {
     const isParent = item.items && Object.keys(item.items).length > 0;
 
     return (
-        <div className="status-item">
+        <div className={`status-item ${item.status === 'skipped' ? 'skipped' : ''}`}>
             <div className="status-item-header" onClick={toggleCollapse}>
                 {isParent && <span className="collapse-icon">{isCollapsed ? '▶' : '▼'}</span>}
                 <span className="status-item-title">{item.title}</span>
@@ -135,11 +121,6 @@ const Artist: React.FC<ItemProps> = memo(({ item }) => {
                         <div className={`progress-bar ${getProgressColor(item)}`} style={{ width: `${item.progress}%` }}></div>
                     </div>
                 </div>
-                {item.progress === 100 && (
-                    <button onClick={() => downloadFile(item)} className="button download-button">
-                        Download
-                    </button>
-                )}
             </div>
             {isParent && !isCollapsed && (
                 <div className="status-item-children">
