@@ -15,7 +15,7 @@ A full client-side browser-based Tidal downloader, with easy authentication supp
 - Extra error handling
   - Catch unexpected Tidal API responses and deal with non 200 status codes
 - Add interfaces / models / types for easier maintainability 
-- Clean up code (ie Progress.tsx has a lot of repeated code, it could be one function that handles things based on 'type' ('track', 'album', 'artist', etc)
+- Clean up code (some typing is incorrect, need to spend some extra time on it to improve maintainability)
 
 ### Outside of Scope
 - Remote downloading _(ie server side downloads, rather than client side local downloading)_
