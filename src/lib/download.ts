@@ -143,50 +143,80 @@ export const downloadAlbum = async (
             params: { countryCode: auth.user.countryCode },
         });
 
-        let offset = 0;
-        let allItems: any[] = [];
-        while (true) {
-            const response = await axios.get(`https://api.tidal.com/v1/albums/${albumId}/items`, {
-                headers: { Authorization: `Bearer ${auth.access_token}` },
-                params: { countryCode: auth.user.countryCode, limit: 100, offset },
-            });
-            allItems = allItems.concat(response.data.items);
-            offset += response.data.limit;
-            if (offset >= response.data.totalNumberOfItems) break;
-        }
-
-        const tracks = allItems.filter(item => item.type === 'track').map(item => item.item);
-        const trackItems: { [id: string]: ProgressItem } = {};
-
-        for (const track of tracks) {
-            const formattedTitle = formatResourceName(config.template.album, track, { album_artist: albumInfo.data.artist.name });
-            trackItems[track.id.toString()] = {
-                id: track.id.toString(),
-                type: 'track',
-                title: formattedTitle,
-                progress: 0,
-                message: 'Queued',
-                status: 'queued',
-            };
-        }
-
         const albumProgressItem: ProgressItem = {
             id: albumId,
             type: 'album',
             title: albumInfo.data.title,
             progress: 0,
-            message: `Queued ${tracks.length} tracks`,
-            items: trackItems,
+            message: 'Fetching tracks...',
+            items: {},
         };
 
         if (parentId) {
-            setProgress(p => ({ ...p, [parentId]: { ...p[parentId], items: { ...(p[parentId].items || {}), [albumId]: albumProgressItem } } }));
+            setProgress(p => {
+                const parent = p[parentId];
+                if (!parent) return p;
+                const existingAlbum = parent.items?.[albumId] || {};
+                return { ...p, [parentId]: { ...parent, items: { ...(parent.items || {}), [albumId]: { ...existingAlbum, ...albumProgressItem } } } };
+            });
         } else {
-            setProgress(p => ({ ...p, [albumId]: albumProgressItem }));
+            setProgress(p => ({ ...p, [albumId]: { ...(p[albumId] || {}), ...albumProgressItem } }));
         }
 
-        for (const track of tracks) {
-            addTaskToQueue(() => _downloadTrackLogic(track.id.toString(), auth, config, setProgress, albumId));
+        let offset = 0;
+        while (true) {
+            const response = await axios.get(`https://api.tidal.com/v1/albums/${albumId}/items`, {
+                headers: { Authorization: `Bearer ${auth.access_token}` },
+                params: { countryCode: auth.user.countryCode, limit: 100, offset },
+            });
+            
+            const tracks = response.data.items.filter((item: any) => item.type === 'track').map((item: any) => item.item);
+
+            for (const track of tracks) {
+                const formattedTitle = formatResourceName(config.template.album, track, { album_artist: albumInfo.data.artist.name });
+                const trackProgressItem: ProgressItem = {
+                    id: track.id.toString(),
+                    type: 'track',
+                    title: formattedTitle,
+                    progress: 0,
+                    message: 'Queued',
+                    status: 'queued',
+                };
+
+                setProgress(p => {
+                    const parent = p[parentId!];
+                    if (!parent || !parent.items) return p;
+
+                    const album = parent.items[albumId];
+                    if (!album) return p;
+
+                    const updatedAlbum = {
+                        ...album,
+                        items: {
+                            ...(album.items || {}),
+                            [track.id.toString()]: trackProgressItem,
+                        },
+                    };
+
+                    const updatedParentItems = {
+                        ...parent.items,
+                        [albumId]: updatedAlbum,
+                    };
+
+                    return {
+                        ...p,
+                        [parentId!]: {
+                            ...parent,
+                            items: updatedParentItems,
+                        },
+                    };
+                });
+                
+                addTaskToQueue(() => _downloadTrackLogic(track.id.toString(), auth, config, setProgress, albumId));
+            }
+
+            offset += response.data.limit;
+            if (offset >= response.data.totalNumberOfItems) break;
         }
 
     } catch (error) {
@@ -207,34 +237,6 @@ export const downloadPlaylist = async (
             params: { countryCode: auth.user.countryCode },
         });
 
-        let offset = 0;
-        let allItems: any[] = [];
-        while (true) {
-            const response = await axios.get(`https://api.tidal.com/v1/playlists/${playlistId}/items`, {
-                headers: { Authorization: `Bearer ${auth.access_token}` },
-                params: { countryCode: auth.user.countryCode, limit: 100, offset },
-            });
-            allItems = allItems.concat(response.data.items);
-            offset += response.data.limit;
-            if (offset >= response.data.totalNumberOfItems) break;
-        }
-
-        const tracks = allItems.filter(item => item.type === 'track').map(item => item.item);
-        const trackItems: { [id: string]: ProgressItem } = {};
-
-        for (let i = 0; i < tracks.length; i++) {
-            const track = tracks[i];
-            const formattedTitle = formatResourceName(config.template.playlist, track, { playlist_title: playlistInfo.data.title, playlist_index: i + 1 });
-            trackItems[track.id.toString()] = {
-                id: track.id.toString(),
-                type: 'track',
-                title: formattedTitle,
-                progress: 0,
-                message: 'Queued',
-                status: 'queued',
-            };
-        }
-
         setProgress(p => ({
             ...p,
             [playlistId]: {
@@ -242,13 +244,44 @@ export const downloadPlaylist = async (
                 type: 'playlist',
                 title: playlistInfo.data.title,
                 progress: 0,
-                message: `Queued ${tracks.length} tracks`,
-                items: trackItems,
+                message: 'Fetching tracks...',
+                items: {},
             }
         }));
 
-        for (const track of tracks) {
-            addTaskToQueue(() => _downloadTrackLogic(track.id.toString(), auth, config, setProgress, playlistId));
+        let offset = 0;
+        let trackIndex = 0;
+        while (true) {
+            const response = await axios.get(`https://api.tidal.com/v1/playlists/${playlistId}/items`, {
+                headers: { Authorization: `Bearer ${auth.access_token}` },
+                params: { countryCode: auth.user.countryCode, limit: 100, offset },
+            });
+
+            const tracks = response.data.items.filter((item: any) => item.type === 'track').map((item: any) => item.item);
+
+            for (const track of tracks) {
+                const formattedTitle = formatResourceName(config.template.playlist, track, { playlist_title: playlistInfo.data.title, playlist_index: trackIndex + 1 });
+                const trackProgressItem: ProgressItem = {
+                    id: track.id.toString(),
+                    type: 'track',
+                    title: formattedTitle,
+                    progress: 0,
+                    message: 'Queued',
+                    status: 'queued',
+                };
+
+                setProgress(p => {
+                    const playlist = p[playlistId];
+                    if (!playlist) return p;
+                    return { ...p, [playlistId]: { ...playlist, items: { ...(playlist.items || {}), [track.id.toString()]: trackProgressItem } } };
+                });
+
+                addTaskToQueue(() => _downloadTrackLogic(track.id.toString(), auth, config, setProgress, playlistId));
+                trackIndex++;
+            }
+
+            offset += response.data.limit;
+            if (offset >= response.data.totalNumberOfItems) break;
         }
 
     } catch (error) {
@@ -325,7 +358,7 @@ export const downloadArtist = async (
         }));
 
         for (const album of albumsToDownload) {
-            await downloadAlbum(album.id.toString(), auth, config, setProgress, artistId);
+            downloadAlbum(album.id.toString(), auth, config, setProgress, artistId);
         }
 
     } catch (error) {
