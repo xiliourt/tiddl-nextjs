@@ -1,7 +1,8 @@
-# Instant Deploy - Try it Yourself!
+## Instant Deploy - Try it Yourself!
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fxiliourt%2Ftiddl-nextjs%2Ftree%2Fmain)
 
-## Next.JS / React Tidal Downloader
+
+# Next.JS / React Tidal Downloader
 A full client-side browser-based Tidal downloader, with easy authentication support, advanced configuration settings (such as path and naming schemes), multi threading, and a simplistic UI for a user friendly experience.
 
 ### Features
