@@ -146,7 +146,7 @@ const App = () => {
                 <>
                     <div className="url-bar">
                         <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Enter a Tidal URL" />
-                        <button onClick={handleDownload}>Download</button>
+                        <button className="button" onClick={handleDownload}>Download</button>
                     </div>
                     <div className="status">
                         {Object.values(progress).map((p) => {
@@ -162,13 +162,13 @@ const App = () => {
                             return <Track key={`${p.type}-${p.id}`} item={p} onDownload={() => downloadFile(p)} />;
                         })}
                     </div>
-                    <button onClick={handleLogout}>Logout</button>
-                    <button onClick={() => handleRefreshToken(auth.refresh_token!)}>Refresh</button>
+                    <button onClick={handleLogout} className="button">Logout</button>
+                    <button onClick={() => handleRefreshToken(auth.refresh_token!)} className="button">Refresh</button>
                 </>
             ) : (
                 <>
                     <div className="login-container">
-                        <button onClick={handleLogin}>Login</button>
+                        <button onClick={handleLogin} className="button">Login</button>
                         {showLogin && (
                             <div className="login-block">
                                 <h2>Login with Tidal</h2>
