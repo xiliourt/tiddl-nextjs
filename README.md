@@ -2,24 +2,19 @@
 A full client-side browser-based Tidal downloader, with easy authentication support, advanced configuration settings (such as path and naming schemes), multi threading, and a simplistic UI for a user friendly experience.
 
 ### Features
-- Easy authentication via generated login authentication link at first load
+- Easy authentication via generated login authentication link at first load (stored client-side only)
 - Supports track, album, artist and playlist links
 - Supports selecting a download directory to download files direct to disk
-- Config allows configuring of settings equal to tiddl
-  - Full directory structure support (ie {artist}/{artist} - {track}, or {playlist}/{artist} - {track}, etc)
-  - Multithreading supported
-  - Include/Exclude/Only EPs and singles toggle
-  - Download video toggle (not yet functional - video support yet to be added)
-  - Track quality toggle
-- Automatic token refreshing upon load(also refreshable via the 'refresh token' button)
+- In depth config, allowing customisation of even download directory structure and file naming 
+- Automatic token refreshing upon reload (also refreshable via the 'refresh token' button)
+- Purely client side - no API callbacks / server-side processing. Uses client-side axios calls.
 
 ### Missing Features (to be added)
 - Video downloading support
-- Refresh token automatically when an error occurs due to expired token
+- Refresh token upon expired token error
 - Extra error handling
-  - Catch unexpected Tidal API responses
-    - Add models for Tracks, Albums, Artists, Playlist and Video calls, ensuring received data matches
-    - Process non 200 status codes, outputting code + response to user
+  - Catch unexpected Tidal API responses and deal with non 200 status codes
+- Add interfaces / models / types for easier maintainability 
 - Clean up code (ie Progress.tsx has a lot of repeated code, it could be one function that handles things based on 'type' ('track', 'album', 'artist', etc)
 
 ### Outside of Scope
