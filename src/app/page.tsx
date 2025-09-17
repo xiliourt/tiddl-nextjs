@@ -20,8 +20,8 @@ const App = () => {
         template: {
             track: '{artist} - {title}',
             video: '{artist} - {title}',
-            album: '{number:02d}. {artist} - {title}',
-            playlist: '{playlist_number:02d}. {artist} - {title}',
+            album: '{albim_artist}/{album}/{number:02d}. {artist} - {title}',
+            playlist: '{playlist}/{playlist_number:02d}. {artist} - {title}',
         },
         download: {
             quality: 'HIGH',
