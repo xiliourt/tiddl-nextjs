@@ -20,7 +20,7 @@ export const Track: React.FC<{ item: ProgressItem, onDownload: () => void }> = (
             <strong>{item.type}: {item.title}</strong>
             <div>{item.message}</div>
             <progress value={item.progress} max="100" />
-            {isCompleted && <button onClick={onDownload}>Download</button>}
+            {isCompleted && <button className="button" onClick={onDownload}>Download</button>}
         </div>
     );
 };
@@ -35,7 +35,7 @@ export const Album: React.FC<{ item: ProgressItem, onDownload: (item: ProgressIt
             </strong>
             <div>{item.message}</div>
             <progress value={item.progress} max="100" />
-            {isCompleted && <button onClick={() => onDownload(item)}>Download</button>}
+            {isCompleted && <button className="button" onClick={() => onDownload(item)}>Download</button>}
             {!isCollapsed && (
                 <div style={{ marginLeft: '20px', marginTop: '10px' }}>
                     {Object.values(item.items || {}).map((track) => (
@@ -57,7 +57,7 @@ export const Playlist: React.FC<{ item: ProgressItem, onDownload: (item: Progres
             </strong>
             <div>{item.message}</div>
             <progress value={item.progress} max="100" />
-            {isCompleted && <button onClick={() => onDownload(item)}>Download</button>}
+            {isCompleted && <button className="button" onClick={() => onDownload(item)}>Download</button>}
             {!isCollapsed && (
                 <div style={{ marginLeft: '20px', marginTop: '10px' }}>
                     {Object.values(item.items || {}).map((track) => (
@@ -79,7 +79,7 @@ export const Artist: React.FC<{ item: ProgressItem, onDownload: (item: ProgressI
             </strong>
             <div>{item.message}</div>
             <progress value={item.progress} max="100" />
-            {isCompleted && <button onClick={() => onDownload(item)}>Download</button>}
+            {isCompleted && <button className="button" onClick={() => onDownload(item)}>Download</button>}
             {!isCollapsed && (
                 <div style={{ marginLeft: '20px', marginTop: '10px' }}>
                     {Object.values(item.items || {}).map((album) => (
