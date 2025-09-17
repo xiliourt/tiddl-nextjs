@@ -128,8 +128,18 @@ const App = () => {
         }
 
         const resource = tidalResourceFromString(url);
-        if (!resource || !auth) {
-            alert('Invalid Tidal URL or not logged in');
+        if (!resource) {
+            alert('Invalid link, please enter a tidal link');
+            return;
+        }
+
+        if (resource.type === 'video') {
+            alert('Video downloading not yet supported.');
+            return;
+        }
+
+        if (!auth) {
+            alert('You must be logged in to download.');
             return;
         }
 
