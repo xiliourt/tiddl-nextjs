@@ -4,10 +4,10 @@ import axios from 'axios';
 import { AuthResponse } from '@/types/auth';
 import { Config } from '@/types/config';
 import { ProgressItem } from '@/types/download';
-import { formatResourceName } from '@/lib/utils';
+import { formatResourceName, parseTrackStream } from '@/lib/utils';
 import { addTaskToQueue, setMaxConcurrentDownloads } from '@/lib/queue';
 import { TidalApiItem } from '@/types/tidal';
-import { downloadAndSaveTrack } from './downloadTrack';
+import { updateProgressState } from '@/components/Progress';
 
 const _downloadTrackLogic = async (
     trackId: string,
@@ -20,75 +20,73 @@ const _downloadTrackLogic = async (
     grandparentId?: string
 ) => {
     const updateTrackProgress = (updater: (trackProgress: ProgressItem) => ProgressItem) => {
-        setProgress(p => {
-            if (grandparentId && parentId) {
-                // Artist -> Album -> Track
-                const grandparent = p[grandparentId];
-                if (!grandparent || !grandparent.items) return p;
-                const parent = grandparent.items[parentId];
-                if (!parent || !parent.items) return p;
-                const track = parent.items[trackId];
-                if (!track) return p;
-
-                const updatedTrack = updater(track);
-                const updatedParentItems = { ...parent.items, [trackId]: updatedTrack };
-                
-                const completedParentItems = Object.values(updatedParentItems).filter(item => item.progress === 100).length;
-                const parentTotalProgress = Object.values(updatedParentItems).reduce((acc, item) => acc + item.progress, 0);
-                const parentProgress = Math.round(parentTotalProgress / (Object.keys(updatedParentItems).length * 100) * 100);
-                const parentDownloadedBytes = Object.values(updatedParentItems).reduce((acc, item) => acc + (item.downloadedBytes || 0), 0);
-                const parentTimeElapsed = Date.now() - (parent.startTime || 0);
-                const parentSpeed = parentTimeElapsed > 0 ? (parentDownloadedBytes / parentTimeElapsed) * 1000 / (1024 * 1024) : 0;
-                const parentMessage = parentProgress === 100 ? 'Download complete' : `Downloaded ${completedParentItems} of ${Object.keys(updatedParentItems).length} tracks`;
-
-                const updatedParent = { ...parent, progress: parentProgress, items: updatedParentItems, message: parentMessage, speed: parentSpeed, downloadedBytes: parentDownloadedBytes };
-                const updatedGrandparentItems = { ...grandparent.items, [parentId]: updatedParent };
-
-                const completedGrandparentItems = Object.values(updatedGrandparentItems).filter(item => item.progress === 100).length;
-                const grandparentTotalProgress = Object.values(updatedGrandparentItems).reduce((acc, item) => acc + item.progress, 0);
-                const grandparentProgress = Math.round(grandparentTotalProgress / (Object.keys(updatedGrandparentItems).length * 100) * 100);
-                const grandparentDownloadedBytes = Object.values(updatedGrandparentItems).reduce((acc, item) => acc + (item.downloadedBytes || 0), 0);
-                const grandparentTimeElapsed = Date.now() - (grandparent.startTime || 0);
-                const grandparentSpeed = grandparentTimeElapsed > 0 ? (grandparentDownloadedBytes / grandparentTimeElapsed) * 1000 / (1024 * 1024) : 0;
-                const grandparentMessage = grandparentProgress === 100 ? 'Download complete' : `Downloaded ${completedGrandparentItems} of ${Object.keys(updatedGrandparentItems).length} albums`;
-
-                return { ...p, [grandparentId]: { ...grandparent, progress: grandparentProgress, items: updatedGrandparentItems, message: grandparentMessage, speed: grandparentSpeed, downloadedBytes: grandparentDownloadedBytes } };
-
-            } else if (parentId) {
-                // Album/Playlist -> Track
-                const parent = p[parentId];
-                if (!parent || !parent.items) return p;
-                const track = parent.items[trackId];
-                if (!track) return p;
-                const updatedTrack = updater(track);
-                const updatedItems = { ...parent.items, [trackId]: updatedTrack };
-
-                const completedItems = Object.values(updatedItems).filter(item => item.progress === 100).length;
-                const totalProgress = Object.values(updatedItems).reduce((acc, item) => acc + item.progress, 0);
-                const parentProgress = Math.round(totalProgress / (Object.keys(updatedItems).length * 100) * 100);
-                const parentDownloadedBytes = Object.values(updatedItems).reduce((acc, item) => acc + (item.downloadedBytes || 0), 0);
-                const parentTimeElapsed = Date.now() - (parent.startTime || 0);
-                const parentSpeed = parentTimeElapsed > 0 ? (parentDownloadedBytes / parentTimeElapsed) * 1000 / (1024 * 1024) : 0;
-                const parentMessage = parentProgress === 100 ? 'Download complete' : `Downloaded ${completedItems} of ${Object.keys(updatedItems).length} tracks`;
-
-                return { ...p, [parentId]: { ...parent, progress: parentProgress, items: updatedItems, message: parentMessage, speed: parentSpeed, downloadedBytes: parentDownloadedBytes } };
-            } else {
-                // Standalone Track
-                const track = p[trackId];
-                if (!track) return p;
-                return { ...p, [trackId]: updater(track) };
-            }
-        });
+        setProgress(p => updateProgressState(p, trackId, updater, parentId, grandparentId));
     };
 
-    await downloadAndSaveTrack(
-        trackId,
-        formattedTitle,
-        auth,
-        config,
-        dirHandle,
-        updateTrackProgress
-    );
+    let lastLoaded = 0;
+    let lastTimestamp = Date.now();
+
+    try {
+        const streamInfo = await axios.get(`https://api.tidal.com/v1/tracks/${trackId}/playbackinfo`, {
+            headers: { Authorization: `Bearer ${auth.access_token}` },
+            params: { audioquality: config.download.quality, playbackmode: 'STREAM', assetpresentation: 'FULL' },
+        });
+
+        const { urls, fileExtension } = parseTrackStream(streamInfo.data);
+        updateTrackProgress(track => ({ ...track, fileExtension }));
+
+        const pathParts = formattedTitle.split('/');
+        const fileName = pathParts.pop() + fileExtension;
+        let currentDir = dirHandle;
+
+        for (const part of pathParts) {
+            currentDir = await currentDir.getDirectoryHandle(part, { create: true });
+        }
+
+        try {
+            await currentDir.getFileHandle(fileName);
+            updateTrackProgress(track => ({ ...track, progress: 100, message: 'Skipped - File Exists', status: 'skipped' }));
+            return;
+        } catch {
+            // File does not exist, proceed with download
+        }
+
+        updateTrackProgress(track => ({ ...track, message: 'Downloading...', status: 'downloading' }));
+
+        const streamData: ArrayBuffer[] = [];
+        for (const url of urls) {
+            const response = await axios.get(url, {
+                responseType: 'arraybuffer',
+                onDownloadProgress: (progressEvent) => {
+                    if (progressEvent.total) {
+                        const now = Date.now();
+                        const bytesDiff = progressEvent.loaded - lastLoaded;
+                        const timeDiff = now - lastTimestamp;
+                        const speed = timeDiff > 0 ? (bytesDiff / timeDiff) * 1000 / (1024 * 1024) : 0; // MB/s
+                        
+                        lastLoaded = progressEvent.loaded;
+                        lastTimestamp = now;
+
+                        const percentCompleted = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+                        updateTrackProgress(track => ({ ...track, progress: percentCompleted, speed, downloadedBytes: progressEvent.loaded }));
+                    }
+                },
+            });
+            streamData.push(response.data);
+        }
+
+        const blob = new Blob(streamData);
+        
+        const fileHandle = await currentDir.getFileHandle(fileName, { create: true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        updateTrackProgress(track => ({ ...track, progress: 100, message: 'Saved', stream: undefined, status: 'completed', speed: 0 }));
+
+    } catch (error) {
+        console.error(`Failed to download track ${trackId}`, error);
+        updateTrackProgress(track => ({ ...track, message: 'Error downloading track', status: 'error', speed: 0 }));
+    }
 };
 
 export const downloadAlbum = async (
