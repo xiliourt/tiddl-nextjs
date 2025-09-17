@@ -1,6 +1,7 @@
 'use client';
 
 import { Config } from '@/types/config';
+import { useEffect, useRef } from 'react';
 
 interface SettingsProps {
     isOpen: boolean;
@@ -10,6 +11,24 @@ interface SettingsProps {
 }
 
 const Settings: React.FC<SettingsProps> = ({ isOpen, onClose, config, onConfigChange }) => {
+    const settingsRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
 
     const handleTemplateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,7 +53,7 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose, config, onConfigCh
 
     return (
         <div className="settings-popup">
-            <div className="settings-content">
+            <div className="settings-content" ref={settingsRef}>
                 <h2>Settings</h2>
                 <div className="settings-section">
                     <h3>File Name Format</h3>
