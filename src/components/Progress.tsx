@@ -10,6 +10,7 @@ export interface ProgressItem {
     progress: number;
     message: string;
     status?: 'queued' | 'downloading' | 'completed' | 'error' | 'skipped';
+    speed?: number;
     stream?: ArrayBuffer;
     fileExtension?: string;
     items?: { [id: string]: ProgressItem };
@@ -26,11 +27,17 @@ const getProgressColor = (item: ProgressItem) => {
     return 'progress-bar-downloading';
 };
 
+const SpeedDisplay: React.FC<{ speed?: number }> = ({ speed }) => {
+    if (!speed || speed === 0) return null;
+    return <span className="status-item-speed">{speed.toFixed(2)} MB/s</span>;
+};
+
 const Track: React.FC<ItemProps> = memo(({ item }) => {
     return (
         <div className={`status-item ${item.status === 'skipped' ? 'skipped' : ''}`}>
             <div className="status-item-header">
                 <span className="status-item-title">{item.title}</span>
+                <SpeedDisplay speed={item.speed} />
                 <span className="status-item-message">{item.message}</span>
             </div>
             <div className="status-item-body">
@@ -55,6 +62,7 @@ const Album: React.FC<ItemProps> = memo(({ item }) => {
             <div className="status-item-header" onClick={toggleCollapse}>
                 {isParent && <span className="collapse-icon">{isCollapsed ? '▶' : '▼'}</span>}
                 <span className="status-item-title">{item.title}</span>
+                <SpeedDisplay speed={item.speed} />
                 <span className="status-item-message">{item.message}</span>
             </div>
             <div className="status-item-body">
@@ -84,6 +92,7 @@ const Playlist: React.FC<ItemProps> = memo(({ item }) => {
             <div className="status-item-header" onClick={toggleCollapse}>
                 {isParent && <span className="collapse-icon">{isCollapsed ? '▶' : '▼'}</span>}
                 <span className="status-item-title">{item.title}</span>
+                <SpeedDisplay speed={item.speed} />
                 <span className="status-item-message">{item.message}</span>
             </div>
             <div className="status-item-body">
@@ -113,6 +122,7 @@ const Artist: React.FC<ItemProps> = memo(({ item }) => {
             <div className="status-item-header" onClick={toggleCollapse}>
                 {isParent && <span className="collapse-icon">{isCollapsed ? '▶' : '▼'}</span>}
                 <span className="status-item-title">{item.title}</span>
+                <SpeedDisplay speed={item.speed} />
                 <span className="status-item-message">{item.message}</span>
             </div>
             <div className="status-item-body">

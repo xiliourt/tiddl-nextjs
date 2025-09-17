@@ -123,6 +123,12 @@ h2 {
     color: #a0aec0;
 }
 
+.status-item-speed {
+    margin-left: 1rem;
+    font-size: 0.875rem;
+    color: #a0aec0;
+}
+
 .status-item-body {
     display: flex;
     align-items: center;

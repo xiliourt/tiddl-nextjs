@@ -54,6 +54,9 @@ const _downloadTrackLogic = async (
     parentId?: string,
     grandparentId?: string
 ) => {
+    let lastLoaded = 0;
+    let lastTimestamp = Date.now();
+
     const updateTrackProgress = (updater: (trackProgress: ProgressItem) => ProgressItem) => {
         setProgress(p => {
             if (grandparentId && parentId) {
@@ -72,16 +75,20 @@ const _downloadTrackLogic = async (
                 const parentTotalProgress = Object.values(updatedParentItems).reduce((acc, item) => acc + item.progress, 0);
                 const parentProgress = Math.round(parentTotalProgress / (Object.keys(updatedParentItems).length * 100) * 100);
                 const parentMessage = parentProgress === 100 ? 'Download complete' : `Downloaded ${completedParentItems} of ${Object.keys(updatedParentItems).length} tracks`;
+                const parentSpeed = Object.values(updatedParentItems).reduce((acc, item) => acc + (item.speed || 0), 0);
+                const parentSpeedString = parentSpeed > 0 ? `: ${parentSpeed.toFixed(2)} MB/s` : '';
 
-                const updatedParent = { ...parent, progress: parentProgress, items: updatedParentItems, message: parentMessage };
+                const updatedParent = { ...parent, progress: parentProgress, items: updatedParentItems, message: `${parentMessage}${parentSpeedString}`, speed: parentSpeed };
                 const updatedGrandparentItems = { ...grandparent.items, [parentId]: updatedParent };
 
                 const completedGrandparentItems = Object.values(updatedGrandparentItems).filter(item => item.progress === 100).length;
                 const grandparentTotalProgress = Object.values(updatedGrandparentItems).reduce((acc, item) => acc + item.progress, 0);
                 const grandparentProgress = Math.round(grandparentTotalProgress / (Object.keys(updatedGrandparentItems).length * 100) * 100);
                 const grandparentMessage = grandparentProgress === 100 ? 'Download complete' : `Downloaded ${completedGrandparentItems} of ${Object.keys(updatedGrandparentItems).length} albums`;
+                const grandparentSpeed = Object.values(updatedGrandparentItems).reduce((acc, item) => acc + (item.speed || 0), 0);
+                const grandparentSpeedString = grandparentSpeed > 0 ? `: ${grandparentSpeed.toFixed(2)} MB/s` : '';
 
-                return { ...p, [grandparentId]: { ...grandparent, progress: grandparentProgress, items: updatedGrandparentItems, message: grandparentMessage } };
+                return { ...p, [grandparentId]: { ...grandparent, progress: grandparentProgress, items: updatedGrandparentItems, message: `${grandparentMessage}${grandparentSpeedString}`, speed: grandparentSpeed } };
 
             } else if (parentId) {
                 // Album/Playlist -> Track
@@ -96,8 +103,10 @@ const _downloadTrackLogic = async (
                 const totalProgress = Object.values(updatedItems).reduce((acc, item) => acc + item.progress, 0);
                 const parentProgress = Math.round(totalProgress / (Object.keys(updatedItems).length * 100) * 100);
                 const parentMessage = parentProgress === 100 ? 'Download complete' : `Downloaded ${completedItems} of ${Object.keys(updatedItems).length} tracks`;
+                const parentSpeed = Object.values(updatedItems).reduce((acc, item) => acc + (item.speed || 0), 0);
+                const parentSpeedString = parentSpeed > 0 ? `: ${parentSpeed.toFixed(2)} MB/s` : '';
 
-                return { ...p, [parentId]: { ...parent, progress: parentProgress, items: updatedItems, message: parentMessage } };
+                return { ...p, [parentId]: { ...parent, progress: parentProgress, items: updatedItems, message: `${parentMessage}${parentSpeedString}`, speed: parentSpeed } };
             } else {
                 // Standalone Track
                 const track = p[trackId];
@@ -142,8 +151,16 @@ const _downloadTrackLogic = async (
                 responseType: 'arraybuffer',
                 onDownloadProgress: (progressEvent) => {
                     if (progressEvent.total) {
+                        const now = Date.now();
+                        const bytesDiff = progressEvent.loaded - lastLoaded;
+                        const timeDiff = now - lastTimestamp;
+                        const speed = (bytesDiff / timeDiff) * 1000 / (1024 * 1024); // MB/s
+                        
+                        lastLoaded = progressEvent.loaded;
+                        lastTimestamp = now;
+
                         const percentCompleted = Math.round((progressEvent.loaded / progressEvent.total) * 100);
-                        updateTrackProgress(track => ({ ...track, progress: percentCompleted }));
+                        updateTrackProgress(track => ({ ...track, progress: percentCompleted, speed }));
                     }
                 },
             });
@@ -165,12 +182,12 @@ const _downloadTrackLogic = async (
             const writable = await fileHandle.createWritable();
             await writable.write(blob);
             await writable.close();
-            updateTrackProgress(track => ({ ...track, progress: 100, message: 'Saved', stream: undefined, status: 'completed' }));
+            updateTrackProgress(track => ({ ...track, progress: 100, message: 'Saved', stream: undefined, status: 'completed', speed: 0 }));
         }
 
     } catch (error) {
         console.error(`Failed to download track ${trackId}`, error);
-        updateTrackProgress(track => ({ ...track, message: 'Error downloading track', status: 'error' }));
+        updateTrackProgress(track => ({ ...track, message: 'Error downloading track', status: 'error', speed: 0 }));
     }
 };
 
