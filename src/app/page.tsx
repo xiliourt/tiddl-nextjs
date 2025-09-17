@@ -149,7 +149,7 @@ const App = () => {
                         <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Enter a Tidal URL" />
                         <button className="button" onClick={handleDownload}>Download</button>
                     </div>
-                    <Progress items={progress} onDownload={downloadFile} />
+                    <Progress items={progress} />
                     <button onClick={handleLogout} className="button">Logout</button>
                     <button onClick={() => handleRefreshToken(auth.refresh_token!)} className="button">Refresh</button>
                 </>
