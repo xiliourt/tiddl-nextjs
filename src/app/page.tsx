@@ -9,7 +9,6 @@ import { ProgressItem } from '@/types/progress';
 import { Config } from '@/types/config';
 import { TidalResource } from '@/types/tidal';
 import Settings from '@/components/Settings';
-import CogIcon from '@/components/CogIcon';
 import Progress from '@/components/Progress';
 
 const App = () => {
