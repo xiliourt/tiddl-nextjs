@@ -1,4 +1,5 @@
-A simple next.js application to download tidal URLs locally.
+# Next.JS / React Tidal Downloader
+A full client-side browser-based Tidal downloader, with easy authentication support, advanced configuration settings (such as path and naming schemes), etc.
 
 ### Features
 - Easy authentication via generated login authentication link at first load
