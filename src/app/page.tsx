@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getDeviceAuth, getToken, refreshToken } from '@/lib/auth';
 import { tidalResourceFromString } from '@/lib/utils';
-import { downloadAlbum, downloadPlaylist, downloadArtist, downloadTrack } from '@/lib/download';
+import { downloadResource } from '@/lib/download';
 import { AuthResponse } from '@/types/auth';
 import { ProgressItem } from '@/types/progress';
 import { Config } from '@/types/config';
@@ -58,8 +58,6 @@ const App = () => {
         const data = (await ffmpeg.readFile("output.mp4")) as any;
     };
 
-
-    
     const selectDirectory = async () => {
         try {
             const handle = await window.showDirectoryPicker();
@@ -170,14 +168,7 @@ const App = () => {
             return;
         }
 
-        const downloadFunctions: { [key: string]: (id: string, auth: AuthResponse, config: Config, setProgress: React.Dispatch<React.SetStateAction<{ [id: string]: ProgressItem }>>, dirHandle: FileSystemDirectoryHandle) => void } = {
-            track: downloadTrack,
-            album: downloadAlbum,
-            playlist: downloadPlaylist,
-            artist: downloadArtist,
-        };
-
-        if (resource.type in downloadFunctions) { downloadFunctions[resource.type](resource, auth, config, setProgress, dirHandle); }
+        downloadResource(resource, auth, config, setProgress, dirHandle); }
     };
 
     return (
