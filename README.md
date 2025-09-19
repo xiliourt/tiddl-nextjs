@@ -1,5 +1,7 @@
 # Likely broken rn
-use commit 3f55873a6b00b81ac1652fac2a3a24de96bfa387
+dev is WIP, neatening up code and adding ffmpeg in browser support to add metadata.
+
+Non functional / untested - all hand coded; I'll test later and correct any syntax errors before it goes to main.
 
 # Instant Deploy - Try it Yourself!
 [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/xiliourt/tiddl-nextjs)
