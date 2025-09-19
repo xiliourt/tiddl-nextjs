@@ -9,9 +9,11 @@ export function tidalResourceFromString(str: string): TidalResource | null {
         const parts = url.pathname.split('/');
         const resourceTypes: ResourceType[] = ['track', 'video', 'album', 'playlist', 'artist'];
 
+        // Ensure null is returned if type isn't identified
         let type: ResourceType | undefined;
         let id: string | undefined;
 
+        // Extract the resource type + ID from URL
         for (let i = 0; i < parts.length; i++) {
             if (resourceTypes.includes(parts[i] as ResourceType)) {
                 type = parts[i] as ResourceType;
@@ -20,15 +22,11 @@ export function tidalResourceFromString(str: string): TidalResource | null {
             }
         }
 
-        if (!type || !id) {
-            return null;
-        }
-
-        if (type !== 'playlist' && !/^\d+$/.test(id)) {
-            return null;
-        }
-
-        return { type, id };
+        if (!type || !id) { return null; }
+        if (type !== 'playlist' && !/^\d+$/.test(id)) { return null; }
+        
+        let apiType =`${id}s`
+        return { type, id, apiType };
     } catch {
         return null;
     }
