@@ -69,3 +69,6 @@ export interface TidalApiItem {
     item: TidalTrack | TidalVideo;
     type: 'track' | 'video';
 }
+
+export type FetchItemInfo = (resource: ResourceType, auth: AuthResponse) => Promise<void>
+export type FetchTidalItems = (resource: ResourceType, auth: AuthResponse, offset: number) => Promise<void>
