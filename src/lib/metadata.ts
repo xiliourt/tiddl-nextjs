@@ -4,6 +4,7 @@ import { ItemWithCredits } from './models/api';
 import { join, parse } from 'path';
 import { fetchFile, toBlobURL } from "@ffmpeg/util";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
+import { toBlobURL } from "@ffmpeg/utils";
 import { useRef, useState } from "react";
 
 // trackDataPath can be the location of the file in javascript's memory, rather than on the virtual disk
@@ -87,6 +88,7 @@ export async function addVideoMetadata(videoPath: string, video: Video): Promise
     });
 }
 
+// Returns in a format ready to put straight into ffmpeg
 export class Cover {
     private uid: string;
     private url: string;
@@ -112,32 +114,7 @@ export class Cover {
             return this.content;
         } catch (error) {
             console.error(`Could not download cover. (${error}) ${this.url}`);
-            return this.content;
+            return toBlobURL(this.content);
         }
-    }
-
-    async save(directoryPath: string, filename = 'cover.jpg'): Promise<string | undefined> {
-        const content = await this.getContent();
-        if (!content.length) {
-            console.error('Cover file content is empty');
-            return;
-        }
-
-        const filePath: string = join(directoryPath, filename);
-        if (existsSync(filePath)) {
-            return filePath;
-        }
-
-        if (!existsSync(directoryPath)) {
-            mkdirSync(directoryPath, { recursive: true });
-        }
-
-        return new Promise((resolve, reject) => {
-            const writer = createWriteStream(filePath);
-            writer.write(content);
-            writer.end();
-            writer.on('finish', () => resolve(filePath));
-            writer.on('error', reject);
-        });
     }
 }
