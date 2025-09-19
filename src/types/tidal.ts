@@ -1,7 +1,9 @@
 export type ResourceType = 'track' | 'video' | 'album' | 'playlist' | 'artist';
+export type ApiResourceType = 'tracks' | 'videos' | 'albums' | 'playlists' | 'artists';
 
-export interface TidalResource {
+export type TidalResource = {
     type: ResourceType;
+    apiType: ApiResourceType;
     id: string;
 }
 
