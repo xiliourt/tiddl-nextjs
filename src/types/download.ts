@@ -3,7 +3,7 @@ import type { AuthResponse } from @/types/auth
 import type { Config } from @/types/config
 import type { ProgressItem } from '@/types/progress'
 
-export interface DownloadItemParams {
+export type DownloadItemParams {
   item: TidalApiItem;
   auth: AuthResponse;
   config: Config;
@@ -11,4 +11,5 @@ export interface DownloadItemParams {
   dirHandle: FileSystemDirectoryHandle;
 }
 
-export type DownloadItemFn = (params: DownloadItemParams) => void;
+export type DownloadItemFn = (params: DownloadItemParams) => Promise<void>;
+
