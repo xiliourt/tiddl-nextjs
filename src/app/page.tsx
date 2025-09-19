@@ -10,8 +10,6 @@ import { Config } from '@/types/config';
 import { TidalResource } from '@/types/tidal';
 import Settings from '@/components/Settings';
 import Progress from '@/components/Progress';
-import { CORE_URL, CORE_MT_URL } from "./const";
-
 
 const App = () => {
     const [url, setUrl] = useState('');
