@@ -1,4 +1,4 @@
-export interface ProgressItem {
+export type ProgressItem = {
     id: string;
     type: 'track' | 'album' | 'playlist' | 'artist';
     title: string;
