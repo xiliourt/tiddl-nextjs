@@ -1,6 +1,6 @@
-import type { TidalApiItem } from @/types/tidal
-import type { AuthResponse } from @/types/auth
-import type { Config } from @/types/config
+import type { TidalApiItem } from '@/types/tidal'
+import type { AuthResponse } from '@/types/auth'
+import type { Config } from '@/types/config'
 import type { ProgressItem } from '@/types/progress'
 
 export type DownloadItemParams {
