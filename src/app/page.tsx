@@ -10,6 +10,8 @@ import { Config } from '@/types/config';
 import { TidalResource } from '@/types/tidal';
 import Settings from '@/components/Settings';
 import Progress from '@/components/Progress';
+import { CORE_URL, CORE_MT_URL } from "./const";
+
 
 const App = () => {
     const [url, setUrl] = useState('');
@@ -34,7 +36,30 @@ const App = () => {
     });
     const [progress, setProgress] = useState<{ [id: string]: ProgressItem }>({});
     const [dirHandle, setDirHandle] = useState<FileSystemDirectoryHandle | null>(null);
+    
+    const ffmpeg = ffmpegRef.current;
+    const coreURL = await toBlobURL(CORE_URL, "text/javascript", true, setProgress);
+    const wasmURL = await toBlobURL(CORE_URL.replace(/.js$/g, ".wasm"), "application/wasm", true, setProgress);
+    ffmpeg.current.terminate();
+    await ffmpeg.current.load({ coreURL, wasmURL });
+    
+    await ffmpeg.load({
+        coreURL: await toBlobURL("/ffmpeg-core.js", "text/javascript"),
+        wasmURL: await toBlobURL("/ffmpeg-core.wasm", "application/wasm"),
+    });
+    setLoaded(true);
+    setIsLoading(false);
 
+    const transcode = async (params: string) => {
+        const ffmpeg = ffmpegRef.current;
+        
+        );
+        await ffmpeg.exec(["-i", blob, "output.mp4"]);
+        const data = (await ffmpeg.readFile("output.mp4")) as any;
+    };
+
+
+    
     const selectDirectory = async () => {
         try {
             const handle = await window.showDirectoryPicker();
@@ -56,7 +81,7 @@ const App = () => {
             return;
         }
         try {
-            const newTokenData = await refreshToken(refreshTokenValue);
+            const newTokenData: AuthResponse = await refreshToken(refreshTokenValue);
             setAuth(prevAuth => {
                 const newAuth = {
                     ...(prevAuth || {}),
@@ -73,7 +98,7 @@ const App = () => {
     }, []);
 
     useEffect(() => {
-        const storedAuth = localStorage.getItem('auth');
+        const storedAuth AuthResponse = localStorage.getItem('auth');
         if (storedAuth) {
             const parsedAuth = JSON.parse(storedAuth);
             setAuth(parsedAuth);
@@ -152,9 +177,7 @@ const App = () => {
             artist: downloadArtist,
         };
 
-        if (resource.type in downloadFunctions) {
-            downloadFunctions[resource.type](resource.id, auth, config, setProgress, dirHandle);
-        }
+        if (resource.type in downloadFunctions) { downloadFunctions[resource.type](resource, auth, config, setProgress, dirHandle); }
     };
 
     return (
