@@ -12,3 +12,5 @@ export interface ProgressItem {
     fileExtension?: string;
     items?: { [id: string]: ProgressItem };
 }
+
+export type SetProgressFn = (update: ProgressItem) => void;
