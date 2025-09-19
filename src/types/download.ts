@@ -3,11 +3,11 @@ import type { AuthResponse } from '@/types/auth';
 import type { Config } from '@/types/config';
 import type { ProgressItem } from '@/types/progress';
 
-export type DownloadItemParams {
+export type DownloadItemParams = {
     item: TidalApiItem;
     auth: AuthResponse;
     config: Config;
-    setProgress: SetProgressFn;,
+    setProgress: SetProgressFn;
     dirHandle: FileSystemDirectoryHandle;
 }
 
