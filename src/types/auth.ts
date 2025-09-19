@@ -1,4 +1,4 @@
-export interface AuthDeviceResponse {
+export type AuthDeviceResponse = {
     deviceCode: string;
     userCode: string;
     verificationUri: string;
@@ -7,7 +7,7 @@ export interface AuthDeviceResponse {
     interval: number;
 }
 
-export interface AuthResponse {
+export type AuthResponse = {
     access_token: string;
     refresh_token?: string;
     expires_in: number;
