@@ -30,7 +30,7 @@ export type AuthResponse = {
     user_id: number;
 }
 
-// Not utilised; simply for reference - the functions are typed in file
+// Not utilised; simply for reference - the functions are typescript in file
 export type getDeviceAuth = () => Promise<AuthDeviceResponse>;
 export type getToken = (deviceCode: string) => Promise<AuthResponse>;
 export type refreshToken = (refreshToken: string) => Promise<AuthResponse>
