@@ -1,8 +1,9 @@
 export type ResourceType = 'track' | 'video' | 'album' | 'playlist' | 'artist';
+export type ApiResourceType = 'tracks' | 'videos' | 'albums' | 'playlists' | 'artists';
 
-export interface TidalResource {
+export type TidalResource = {
     type: ResourceType;
-    id: string;
+    id: string
 }
 
 export interface TidalTrack {
@@ -68,3 +69,6 @@ export interface TidalApiItem {
     item: TidalTrack | TidalVideo;
     type: 'track' | 'video';
 }
+
+export type FetchItemInfo = (resource: ResourceType, auth: AuthResponse) => Promise<void>
+export type FetchTidalItems = (resource: ResourceType, auth: AuthResponse, offset: number) => Promise<void>
